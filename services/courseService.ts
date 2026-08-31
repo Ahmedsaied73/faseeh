@@ -6,7 +6,11 @@
  */
 
 import { apiClient } from '@/lib/api-client';
+import { isMockCourse, mockCourse, MOCK_COURSE_ID } from '@/lib/mock/course';
 import { PaginationMeta } from '@/types/api';
+import type { VideoProgress } from '@/services/quizService';
+
+export { MOCK_COURSE_ID };
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,7 +25,26 @@ export interface CourseListItem {
   grade?: string;
 }
 
+/**
+ * The authenticated user's own enrollment row for a course, as returned
+ * inline by GET /courses/:id — never another user's.
+ */
+export interface CourseEnrollment {
+  id: number;
+  userId: number;
+  courseId: number;
+  isPaid: boolean;
+  paymentDate?: string | null;
+  progress: number;
+  startedAt: string;
+  completedAt: string | null;
+  isCompleted: boolean;
+  lastAccess: string;
+  createdAt: string;
+}
+
 export interface CourseDetail extends CourseListItem {
+  description_short?: string;
   duration?: string;
   files_count?: number;
   videos_count?: number;
@@ -34,7 +57,12 @@ export interface CourseDetail extends CourseListItem {
     thumbnail?: string;
     duration?: number;
     description?: string;
+    position?: number;
   }>;
+  /** The authenticated user's enrollment for this course, or null if not enrolled. */
+  enrollment?: CourseEnrollment | null;
+  /** The authenticated user's video progress, scoped to this course's videos. */
+  progress?: VideoProgress[];
 }
 
 export interface CoursesPage {
@@ -46,7 +74,7 @@ export interface EnrollmentResult {
   courseId: number | string;
   enrolled: boolean;
   isPaid?: boolean;
-}
+};
 
 // ---------------------------------------------------------------------------
 // Response shapes — backend may return flat or wrapped
@@ -93,10 +121,30 @@ export async function fetchAllCourses(page = 1, limit = 20): Promise<CoursesPage
 
 /**
  * Fetch a single course by its ID.
+ *
+ * Backend response is the aggregate shape `{ success, data: { course, videos,
+ * enrollment, progress } }` — course, the authenticated user's videos,
+ * enrollment, and video progress all come back in this one call, so the
+ * Course page never needs separate enrollment-status or per-video progress
+ * requests to initialize.
  */
 export async function fetchCourseById(courseId: string | number): Promise<CourseDetail> {
+  if (isMockCourse(courseId)) return mockCourse;
+
   const raw = await apiClient.get<unknown>(`/courses/${courseId}`);
-  return extractData<CourseDetail>(raw);
+  const payload = extractData<{
+    course: CourseListItem & Record<string, unknown>;
+    videos?: CourseDetail['videos'];
+    enrollment?: CourseEnrollment | null;
+    progress?: VideoProgress[];
+  }>(raw);
+
+  return {
+    ...(payload.course as object),
+    videos: payload.videos ?? [],
+    enrollment: payload.enrollment ?? null,
+    progress: payload.progress ?? [],
+  } as CourseDetail;
 }
 
 /**
@@ -106,6 +154,9 @@ export async function fetchCourseById(courseId: string | number): Promise<Course
 export async function checkEnrollmentStatus(
   courseId: string | number,
 ): Promise<EnrollmentResult> {
+  if (isMockCourse(courseId)) {
+    return { courseId, enrolled: true, isPaid: false };
+  }
   const raw = await apiClient.post<unknown>('/enroll/status', { courseId });
   const data = extractData<{ enrolled?: boolean; isPaid?: boolean }>(raw);
   return {
@@ -120,6 +171,9 @@ export async function checkEnrollmentStatus(
  * POST /enroll/  { courseId }
  */
 export async function enrollInCourse(courseId: string | number): Promise<EnrollmentResult> {
+  if (isMockCourse(courseId)) {
+    return { courseId, enrolled: true, isPaid: false };
+  }
   const raw = await apiClient.post<unknown>('/enroll/', { courseId });
   const data = extractData<{ enrollment?: { isPaid?: boolean } }>(raw);
   return {

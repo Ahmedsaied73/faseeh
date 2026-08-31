@@ -65,7 +65,10 @@ export const fetchCourses = createAsyncThunk(
   },
 );
 
-export const fetchCourseById = createAsyncThunk(
+export const fetchCourseById = createAsyncThunk<
+  CourseDetail,
+  string
+>(
   'courses/fetchCourseById',
   async (courseId: string, { rejectWithValue }) => {
     try {
@@ -146,7 +149,25 @@ const courseSlice = createSlice({
       })
       .addCase(fetchCourseById.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentCourse = action.payload;
+        state.error = null;
+        const course = action.payload;
+        const enrollment = action.payload.enrollment;
+        state.currentCourse = course;
+
+        // Upsert enrollment status from consolidated payload
+        const courseId = course?.id;
+        if (courseId !== undefined) {
+          const enrolled = enrollment !== null && enrollment !== undefined;
+          const isPaid = enrollment?.isPaid ?? false;
+          const idx = state.enrollments.findIndex(
+            (e) => String(e.courseId) === String(courseId),
+          );
+          if (idx >= 0) {
+            state.enrollments[idx] = { courseId, enrolled, isPaid };
+          } else {
+            state.enrollments.push({ courseId, enrolled, isPaid });
+          }
+        }
       })
       .addCase(fetchCourseById.rejected, (state, action) => {
         state.loading = false;

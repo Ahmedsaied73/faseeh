@@ -80,8 +80,7 @@ export const fetchQuizById = createAsyncThunk(
 
 /**
  * Mark a video as completed.
- * Calls POST /progress/mark { videoId, completed: true }
- * (replaces the old POST /progress/complete { videoId })
+ * Calls POST /progress/complete { videoId }
  */
 export const completeVideo = createAsyncThunk(
   'quiz/completeVideo',
@@ -170,6 +169,17 @@ export const quizSlice = createSlice({
     resetSubmitState: (state) => {
       state.submitting = false;
       state.submitSuccess = false;
+    },
+    /**
+     * Bulk-set video progress from the aggregate GET /courses/:id response's
+     * `progress` array. Replaces the old per-video fetchVideoProgress loop
+     * during Course-page init — same state shape, populated in one dispatch
+     * instead of N thunks.
+     */
+    hydrateVideoProgress: (state, action: PayloadAction<VideoProgress[]>) => {
+      action.payload.forEach(({ videoId, completed, watchedAt }) => {
+        state.videoProgressMap[String(videoId)] = { completed, watchedAt };
+      });
     },
   },
   extraReducers: (builder) => {
@@ -271,7 +281,7 @@ export const quizSlice = createSlice({
 // Exports
 // ---------------------------------------------------------------------------
 
-export const { setVideoCompleted, setSelectedAnswer, resetQuizState, resetSubmitState } =
+export const { setVideoCompleted, setSelectedAnswer, resetQuizState, resetSubmitState, hydrateVideoProgress } =
   quizSlice.actions;
 
 export const selectQuizState = (state: RootState) => state.quiz;

@@ -2,8 +2,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
 import { Play, MonitorPlay, BrainCircuit, Headphones, ArrowLeft } from 'lucide-react';
+import { useAppSelector } from '@/store/hooks';
+import { selectIsAuthenticated } from '@/store/slices/authSlice';
 
 // ─── Grade Cards data ───────────────────────────────────────────
 const GRADES = [
@@ -47,12 +48,7 @@ const FEATURES = [
 ];
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const hasAuthCookie = document.cookie.includes('isLoggedIn=true');
-    setIsLoggedIn(hasAuthCookie);
-  }, []);
+  const isLoggedIn = useAppSelector(selectIsAuthenticated);
 
   return (
     <main className="w-full min-h-screen bg-[#f7f9fc]" dir="rtl">
@@ -82,18 +78,19 @@ export default function Home() {
               {/* Badge */}
               <div className="inline-flex items-center gap-2 bg-[#207bff]/10 text-[#207bff] px-4 py-1.5 rounded-full text-[13px] font-semibold">
                 <span className="w-2 h-2 rounded-full bg-[#207bff] animate-pulse" />
-                منصة تعليمية متخصصة في الرياضيات
+                منصة تعليمية متخصصة في الكيمياء
               </div>
 
               {/* Headline */}
               <h1 className="text-[40px] md:text-[56px] font-bold leading-tight text-[#191c1e]">
                 الأستاذ{' '}
-                <span className="text-[#207bff]">لطفي زهران</span>
+                <span className="text-[#207bff]"> عبدالهادي موسى</span>
+           
               </h1>
 
               {/* Sub-headline */}
               <p className="text-[18px] text-[#414754] leading-relaxed max-w-lg">
-                في مادة الرياضيات ... مفيش صعوبة هتواجهك تاني. اكتشف متعة التعلم والفهم العميق
+                في مادة الكيمياء ... مفيش صعوبة هتواجهك تاني. اكتشف متعة التعلم والفهم العميق
                 بأسلوب مبتكر.
               </p>
 
@@ -151,7 +148,8 @@ export default function Home() {
                 <div className="relative w-[260px] h-[260px] md:w-[420px] md:h-[420px] rounded-full overflow-hidden border-[4px] border-[#207bff] shadow-[0_8px_40px_rgba(32,123,255,0.25)]">
                   <Image
                     src="/teacher.png"
-                    alt="الأستاذ لطفي زهران"
+                    alt="الأستاذ عبد الهادي موسى"
+               
                     fill
                     className="object-cover"
                     priority
@@ -262,7 +260,7 @@ export default function Home() {
               <div className="relative w-full max-w-sm aspect-square">
                 <Image
                   src="/brain.png"
-                  alt="تعلم الرياضيات"
+                  alt="تعلم الكيمياء"
                   fill
                   className="object-contain"
                 />
@@ -276,10 +274,11 @@ export default function Home() {
               </h2>
               <div className="flex flex-col gap-4">
                 {[
-                  'مستر لطفي زهران بيقدم طريقة سهلة لتعلم الرياضيات.',
+                  'مستر عبدالهادي موسى بيقدم طريقة سهلة لتعلم الكيمياء.',
                   'هتلاقي فيديوهات بتشرح لك المفاهيم بشكل بسيط وممتع، ومعاها تمارين تفاعلية تقدر تطبق اللي تعلمته.',
-                  'هدفنا إنك تحب الرياضيات وتتعلمها بشكل ممتع وسهل.',
+                  'هدفنا إنك تحب الكيمياء وتتعلمها بشكل ممتع وسهل.',
                 ].map((text, i) => (
+           
                   <div key={i} className="flex items-start gap-3">
                     <div className="w-6 h-6 rounded-full bg-[#207bff]/15 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <div className="w-2 h-2 rounded-full bg-[#207bff]" />
