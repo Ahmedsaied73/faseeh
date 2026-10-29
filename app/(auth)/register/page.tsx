@@ -13,6 +13,8 @@ import { setCachedUser } from '@/lib/user-cache';
 import { addNotification, setGlobalLoading } from '@/store/slices/uiSlice';
 import { PAGE_TITLES } from '@/lib/page-titles';
 import { prewarmFingerprint } from '@/lib/fingerprint';
+import { AuthArt } from '@/components/subject/subject-art';
+import { subject } from '@/lib/subject-theme';
 
 const formSchema = z.object({
   firstName: z.string().min(2, {
@@ -47,20 +49,6 @@ const GRADES = [
 
 const inputClass =
   'w-full rounded-lg border border-brand-border bg-brand-surface px-4 py-2.5 text-sm text-brand-text outline-none transition placeholder:text-brand-muted focus:border-brand-primary';
-
-function OrbitArt() {
-  return (
-    <svg viewBox="0 0 320 320" fill="none" className="h-full w-full max-w-sm text-white" aria-hidden="true">
-      <circle cx="160" cy="160" r="14" fill="currentColor" opacity="0.9" />
-      <ellipse cx="160" cy="160" rx="100" ry="44" stroke="currentColor" strokeWidth="1.6" opacity="0.5" />
-      <ellipse cx="160" cy="160" rx="100" ry="44" stroke="currentColor" strokeWidth="1.6" opacity="0.5" transform="rotate(60 160 160)" />
-      <ellipse cx="160" cy="160" rx="100" ry="44" stroke="currentColor" strokeWidth="1.6" opacity="0.5" transform="rotate(120 160 160)" />
-      <circle cx="260" cy="160" r="6" fill="currentColor" />
-      <circle cx="105" cy="72" r="6" fill="currentColor" />
-      <circle cx="105" cy="248" r="6" fill="currentColor" />
-    </svg>
-  );
-}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -157,108 +145,116 @@ export default function RegisterPage() {
       {/* Unique page title — React hoists this to <head> (client pages can't export metadata). */}
       <title>{PAGE_TITLES.register}</title>
       <div className="-mt-16 grid min-h-dvh bg-brand-bg lg:grid-cols-2">
-      <div className="flex items-center justify-center px-6 py-16 lg:order-2">
-        <div className="w-full max-w-sm">
-          <Link href="/" className="text-lg font-extrabold text-brand-primary">أكاديميا</Link>
-          <h1 className="mt-6 text-2xl font-extrabold text-brand-text">ابدأ مدارك الجديد</h1>
-          <p className="mt-1.5 text-sm text-brand-muted">أنشئ حسابًا لتتابع دوراتك ونتائجك من أي جهاز.</p>
+        <div className="flex flex-col lg:order-2">
+          <div className="relative h-36 overflow-hidden bg-brand-ink lg:hidden">
+            <AuthArt variant="register" compact />
+          </div>
 
-          <form onSubmit={form.handleSubmit(onSubmit)} method="post" className="mt-8 space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="reg-first" className="mb-1.5 block text-sm font-semibold text-brand-text">الاسم الأول</label>
-                <input id="reg-first" type="text" required placeholder="أحمد" {...form.register('firstName')} className={inputClass} />
-                {errors.firstName && <p className="mt-1 text-xs text-brand-accent">{errors.firstName.message}</p>}
-              </div>
-              <div>
-                <label htmlFor="reg-last" className="mb-1.5 block text-sm font-semibold text-brand-text">الاسم الأخير</label>
-                <input id="reg-last" type="text" required placeholder="أسامة" {...form.register('lastName')} className={inputClass} />
-                {errors.lastName && <p className="mt-1 text-xs text-brand-accent">{errors.lastName.message}</p>}
-              </div>
-            </div>
-            <div>
-              <label htmlFor="reg-phone" className="mb-1.5 block text-sm font-semibold text-brand-text">رقم الهاتف</label>
-              <input id="reg-phone" type="tel" required dir="ltr" placeholder="01XXXXXXXXX" {...form.register('phone')} className={inputClass} />
-              {errors.phone && <p className="mt-1 text-xs text-brand-accent">{errors.phone.message}</p>}
-            </div>
-            <div>
-              <label htmlFor="reg-email" className="mb-1.5 block text-sm font-semibold text-brand-text">البريد الإلكتروني</label>
-              <input id="reg-email" type="email" required placeholder="you@example.com" {...form.register('email')} className={inputClass} />
-              {errors.email && <p className="mt-1 text-xs text-brand-accent">{errors.email.message}</p>}
-            </div>
-            <div>
-              <label htmlFor="reg-grade" className="mb-1.5 block text-sm font-semibold text-brand-text">الصف الدراسي</label>
-              <div className="relative">
-                <select id="reg-grade" required {...form.register('grade')} defaultValue="" className={inputClass + ' appearance-none pl-10'}>
-                  <option value="" disabled>اختر الصف الدراسي</option>
-                  {GRADES.map((g) => (
-                    <option key={g.value} value={g.value}>{g.label}</option>
-                  ))}
-                </select>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted"><path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </div>
-              {errors.grade && <p className="mt-1 text-xs text-brand-accent">{errors.grade.message}</p>}
-            </div>
-            <div>
-              <label htmlFor="reg-pass" className="mb-1.5 block text-sm font-semibold text-brand-text">كلمة المرور</label>
-              <input id="reg-pass" type="password" required placeholder="٨ أحرف على الأقل" {...form.register('password')} className={inputClass} />
-              {errors.password && <p className="mt-1 text-xs text-brand-accent">{errors.password.message}</p>}
-            </div>
-            <div>
-              <label htmlFor="reg-confirm" className="mb-1.5 block text-sm font-semibold text-brand-text">تأكيد كلمة المرور</label>
-              <input id="reg-confirm" type="password" required placeholder="أعد كتابة كلمة المرور" {...form.register('confirmPassword')} className={inputClass} />
-              {errors.confirmPassword && <p className="mt-1 text-xs text-brand-accent">{errors.confirmPassword.message}</p>}
-            </div>
+          <div className="flex flex-1 items-center justify-center px-6 py-16">
+            <div className="w-full max-w-sm">
+              <Link href="/" className="text-lg font-extrabold text-brand-primary">أكاديميا</Link>
+              <h1 className="mt-6 text-2xl font-extrabold text-brand-text">{subject.register.title}</h1>
+              <p className="mt-1.5 text-sm text-brand-muted">{subject.register.subtitle}</p>
 
-            {errorNotification && (
-              <div className="rounded-lg border border-brand-accent/40 bg-brand-accent/10 p-3 text-right text-sm text-brand-accent">
-                {errorNotification.message}
-              </div>
-            )}
+              <form onSubmit={form.handleSubmit(onSubmit)} method="post" className="mt-8 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="reg-first" className="mb-1.5 block text-sm font-semibold text-brand-text">الاسم الأول</label>
+                    <input id="reg-first" type="text" required placeholder="أحمد" {...form.register('firstName')} className={inputClass} />
+                    {errors.firstName && <p className="mt-1 text-xs text-brand-accent">{errors.firstName.message}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="reg-last" className="mb-1.5 block text-sm font-semibold text-brand-text">الاسم الأخير</label>
+                    <input id="reg-last" type="text" required placeholder="أسامة" {...form.register('lastName')} className={inputClass} />
+                    {errors.lastName && <p className="mt-1 text-xs text-brand-accent">{errors.lastName.message}</p>}
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="reg-phone" className="mb-1.5 block text-sm font-semibold text-brand-text">رقم الهاتف</label>
+                  <input id="reg-phone" type="tel" required dir="ltr" placeholder="01XXXXXXXXX" {...form.register('phone')} className={inputClass} />
+                  {errors.phone && <p className="mt-1 text-xs text-brand-accent">{errors.phone.message}</p>}
+                </div>
+                <div>
+                  <label htmlFor="reg-email" className="mb-1.5 block text-sm font-semibold text-brand-text">البريد الإلكتروني</label>
+                  <input id="reg-email" type="email" required placeholder="you@example.com" {...form.register('email')} className={inputClass} />
+                  {errors.email && <p className="mt-1 text-xs text-brand-accent">{errors.email.message}</p>}
+                </div>
+                <div>
+                  <label htmlFor="reg-grade" className="mb-1.5 block text-sm font-semibold text-brand-text">الصف الدراسي</label>
+                  <div className="relative">
+                    <select id="reg-grade" required {...form.register('grade')} defaultValue="" className={inputClass + ' appearance-none pl-10'}>
+                      <option value="" disabled>اختر الصف الدراسي</option>
+                      {GRADES.map((g) => (
+                        <option key={g.value} value={g.value}>{g.label}</option>
+                      ))}
+                    </select>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted"><path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </div>
+                  {errors.grade && <p className="mt-1 text-xs text-brand-accent">{errors.grade.message}</p>}
+                </div>
+                <div>
+                  <label htmlFor="reg-pass" className="mb-1.5 block text-sm font-semibold text-brand-text">كلمة المرور</label>
+                  <input id="reg-pass" type="password" required placeholder="٨ أحرف على الأقل" {...form.register('password')} className={inputClass} />
+                  {errors.password && <p className="mt-1 text-xs text-brand-accent">{errors.password.message}</p>}
+                </div>
+                <div>
+                  <label htmlFor="reg-confirm" className="mb-1.5 block text-sm font-semibold text-brand-text">تأكيد كلمة المرور</label>
+                  <input id="reg-confirm" type="password" required placeholder="أعد كتابة كلمة المرور" {...form.register('confirmPassword')} className={inputClass} />
+                  {errors.confirmPassword && <p className="mt-1 text-xs text-brand-accent">{errors.confirmPassword.message}</p>}
+                </div>
 
-            {registered && (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-right text-sm text-emerald-700">
-                تم إنشاء الحساب بنجاح! جارٍ توجيهك إلى الرئيسية...
-              </div>
-            )}
+                {errorNotification && (
+                  <div className="rounded-lg border border-brand-accent/40 bg-brand-accent/10 p-3 text-right text-sm text-brand-accent">
+                    {errorNotification.message}
+                  </div>
+                )}
 
-            <p className="text-right text-xs text-brand-muted leading-relaxed">
-              بالتسجيل في المنصة، أنت توافق على{' '}
-              <Link href="/terms" target="_blank" className="font-semibold text-brand-primary underline hover:text-brand-primary/80">
-                شروط الاستخدام
-              </Link>{' '}
-              و{' '}
-              <Link href="/privacy" target="_blank" className="font-semibold text-brand-primary underline hover:text-brand-primary/80">
-                سياسة الخصوصية
-              </Link>.
+                {registered && (
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-right text-sm text-emerald-700">
+                    تم إنشاء الحساب بنجاح! جارٍ توجيهك إلى الرئيسية...
+                  </div>
+                )}
+
+                <p className="text-right text-xs text-brand-muted leading-relaxed">
+                  بالتسجيل في المنصة، أنت توافق على{' '}
+                  <Link href="/terms" target="_blank" className="font-semibold text-brand-primary underline hover:text-brand-primary/80">
+                    شروط الاستخدام
+                  </Link>{' '}
+                  و{' '}
+                  <Link href="/privacy" target="_blank" className="font-semibold text-brand-primary underline hover:text-brand-primary/80">
+                    سياسة الخصوصية
+                  </Link>.
+                </p>
+
+                <button
+                  type="submit"
+                  disabled={isLoading || !hydrated}
+                  className="w-full rounded-full bg-brand-primary py-3 text-sm font-bold text-white transition hover:bg-brand-primary/90 disabled:opacity-60"
+                >
+                  {isLoading ? 'جاري إنشاء الحساب...' : 'إنشاء الحساب'}
+                </button>
+              </form>
+
+              <p className="mt-6 text-center text-sm text-brand-muted">
+                لديك حساب بالفعل؟{" "}
+                <Link href="/login" className="font-semibold text-brand-primary hover:underline">سجّل الدخول</Link>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative hidden items-center justify-center overflow-hidden bg-brand-ink p-10 lg:order-1 lg:flex">
+          <div className="hero-glow absolute -inset-24 rounded-full bg-brand-accent/20 blur-3xl" aria-hidden="true" />
+          <div className="relative flex flex-col items-center text-center">
+            <div className="h-96 w-96">
+              <AuthArt variant="register" />
+            </div>
+            <p className="mt-6 max-w-xs text-sm leading-relaxed text-white/70">
+              {subject.register.sideLine}
             </p>
-
-            <button
-              type="submit"
-              disabled={isLoading || !hydrated}
-              className="w-full rounded-full bg-brand-primary py-3 text-sm font-bold text-white transition hover:bg-brand-primary/90 disabled:opacity-60"
-            >
-              {isLoading ? 'جاري إنشاء الحساب...' : 'إنشاء الحساب'}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-brand-muted">
-            لديك حساب بالفعل؟{" "}
-            <Link href="/login" className="font-semibold text-brand-primary hover:underline">سجّل الدخول</Link>
-          </p>
+          </div>
         </div>
       </div>
-
-      <div className="relative hidden items-center justify-center overflow-hidden bg-brand-ink p-10 lg:order-1 lg:flex">
-        <div className="hero-glow absolute -inset-24 rounded-full bg-brand-accent/20 blur-3xl" aria-hidden="true" />
-        <div className="relative flex flex-col items-center text-center">
-          <OrbitArt />
-          <p className="mt-6 max-w-xs text-sm leading-relaxed text-white/70">
-            كل مادة تدرسها تدور حول فكرة واحدة مركزية — نساعدك تكتشفها بوضوح.
-          </p>
-        </div>
-      </div>
-    </div>
     </>
   );
 }

@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { selectIsAuthenticated, selectUser, selectIsAdmin, logout } from "@/store/slices/authSlice";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { subject } from "@/lib/subject-theme";
 
 const NAV_LINKS = [
   { href: "/", label: "الرئيسية" },
@@ -97,7 +98,7 @@ export function Navbar() {
               أكاديميا
             </span>
             <span className="text-[10px] font-medium text-brand-muted hidden sm:block">
-              عبدالهادي موسى للكيمياء
+              {subject.brandTagline}
             </span>
           </span>
         </Link>

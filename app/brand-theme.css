@@ -84,3 +84,66 @@
 @media (prefers-reduced-motion: reduce) {
   .agent-panel-enter, .agent-dot, .agent-fab-pulse { animation: none; }
 }
+
+
+/* ---- Subject art motion (404 / login / register) ----
+   Transform + opacity only, so everything stays on the compositor. */
+@keyframes subj-spin { to { transform: rotate(360deg); } }
+@keyframes subj-spin-rev { to { transform: rotate(-360deg); } }
+@keyframes subj-float {
+  0%, 100% { transform: translateY(0); opacity: 0.25; }
+  50% { transform: translateY(-14px); opacity: 0.85; }
+}
+@keyframes subj-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes subj-tag-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes subj-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes subj-wander {
+  0%, 100% { transform: translate(0, 0) rotate(-2deg); }
+  25% { transform: translate(6px, -8px) rotate(2deg); }
+  50% { transform: translate(-4px, -3px) rotate(-1deg); }
+  75% { transform: translate(5px, 5px) rotate(2deg); }
+}
+@keyframes subj-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+.subj-spin-slow { animation: subj-spin 70s linear infinite; transform-box: fill-box; transform-origin: center; }
+.subj-spin-rev { animation: subj-spin-rev 90s linear infinite; transform-box: fill-box; transform-origin: center; }
+.subj-float { animation: subj-float 6s ease-in-out infinite; }
+.subj-bob { animation: subj-bob 3.2s ease-in-out infinite; }
+.subj-tag-in { animation: subj-tag-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.subj-rise { animation: subj-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.subj-wander { animation: subj-wander 5s ease-in-out infinite; display: inline-block; }
+.subj-draw { stroke-dasharray: 1; animation: subj-draw 2.6s ease-in-out infinite alternate; }
+
+/* Arabic geometric (eight-point star) pattern, tinted by the theme primary. */
+.arabesque-bg { position: relative; }
+.arabesque-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: var(--color-brand-primary);
+  opacity: 0.07;
+  -webkit-mask-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72'%3E%3Cg fill='none' stroke='black' stroke-width='1.2'%3E%3Crect x='16' y='16' width='40' height='40'/%3E%3Crect x='16' y='16' width='40' height='40' transform='rotate(45 36 36)'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72'%3E%3Cg fill='none' stroke='black' stroke-width='1.2'%3E%3Crect x='16' y='16' width='40' height='40'/%3E%3Crect x='16' y='16' width='40' height='40' transform='rotate(45 36 36)'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-size: 72px 72px;
+  mask-size: 72px 72px;
+}
+.arabesque-bg > * { position: relative; z-index: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .subj-spin-slow, .subj-spin-rev, .subj-float, .subj-bob,
+  .subj-tag-in, .subj-rise, .subj-wander, .subj-draw { animation: none; }
+  .subj-draw { stroke-dashoffset: 0; }
+}

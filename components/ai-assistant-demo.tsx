@@ -1,46 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { subject } from '@/lib/subject-theme';
 
 type Entry = { role: 'student' | 'assistant'; text: string };
 
-const seed: Entry[] = [
-  { role: 'student', text: 'ما الفرق بين التفاعل الطارد والماص للحرارة؟' },
-  {
-    role: 'assistant',
-    text: 'الطارد يُحرّر طاقة للوسط المحيط فترتفع حرارته (مثل الاحتراق)، بينما الماص يمتص طاقة من الوسط فتنخفض حرارته (مثل ذوبان الثلج).',
-  },
-];
-
-const suggestions = [
-  'اشرح قانون حفظ الكتلة ببساطة',
-  'ما الفرق بين الذرة والجزيء؟',
-  'كيف أوازن معادلة كيميائية؟',
-];
-
-const knowledgeBase: { keys: string[]; answer: string }[] = [
-  {
-    keys: ['حفظ الكتلة'],
-    answer: 'قانون حفظ الكتلة: كتلة المواد المتفاعلة تساوي كتلة النواتج — لا تفنى المادة ولا تُستحدث، فقط تتغير صورتها.',
-  },
-  {
-    keys: ['ذرة', 'جزيء'],
-    answer: 'الذرة أصغر وحدة تحتفظ بخواص العنصر، أما الجزيء فمجموعة ذرات مرتبطة كيميائيًا — قد تكون من عنصر واحد أو أكثر.',
-  },
-  {
-    keys: ['وازن', 'موازنة'],
-    answer: 'لموازنة معادلة: عدّل المعاملات (وليس الأدلة السفلية) حتى يتساوى عدد كل نوع ذرة في طرفي المعادلة، ابدأ بالعنصر الأكثر تعقيدًا.',
-  },
-];
-
 function findAnswer(question: string): string {
-  const match = knowledgeBase.find((k) => k.keys.some((key) => question.includes(key)));
+  const match = subject.assistantKnowledge.find((k) => k.keys.some((key) => question.includes(key)));
   if (match) return match.answer;
   return 'سؤال جيد — هذا النوع من الأسئلة يُشرح بالتفصيل داخل دروس الوحدة المرتبطة به، مع أمثلة محلولة خطوة بخطوة.';
 }
 
 export function AiAssistantDemo() {
-  const [log, setLog] = useState<Entry[]>(seed);
+  const [log, setLog] = useState<Entry[]>(subject.assistantSeed);
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
   const consoleRef = useRef<HTMLDivElement | null>(null);
@@ -64,7 +36,7 @@ export function AiAssistantDemo() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="flex flex-wrap justify-center gap-2">
-        {suggestions.map((s) => (
+        {subject.assistantSuggestions.map((s) => (
           <button
             key={s}
             onClick={() => ask(s)}
@@ -85,7 +57,7 @@ export function AiAssistantDemo() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="اكتب سؤالك في الكيمياء…"
+          placeholder={subject.assistantPlaceholder}
           className="w-full bg-transparent text-sm text-brand-text outline-none placeholder:text-brand-muted"
         />
         <button

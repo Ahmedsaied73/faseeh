@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { subject } from "@/lib/subject-theme";
 
 const QUICK_LINKS = [
   { href: "/", label: "الرئيسية" },
@@ -81,7 +82,7 @@ export function Footer() {
               <span className="text-lg font-extrabold">أكاديميا</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed">
-              تم صنع هذه المنصة بهدف تهيئة الطالب لـ كامل جوانب الثانوية العامة و ما بعدها
+              {subject.footerBlurb}
             </p>
             <div className="mt-5 flex items-center gap-2">
               {SOCIALS.map((s) => (
@@ -132,7 +133,7 @@ export function Footer() {
           </div>
 
           <div>
-            <p className="text-sm font-bold text-white">نصيحة كيميائية أسبوعية</p>
+            <p className="text-sm font-bold text-white">{subject.newsletterTitle}</p>
             <p className="mt-4 text-sm leading-relaxed">
               اشترك لتصلك أسئلة مراجعة قصيرة وتذكيرات بمواعيد الاختبارات كل أسبوع.
             </p>
