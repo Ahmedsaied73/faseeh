@@ -33,6 +33,9 @@ export const siteConfig = {
   teacherName:
     process.env.NEXT_PUBLIC_TEACHER_NAME ?? 'الأستاذ عبد الهادي موسى',
 
+  /** Primary teacher photo. */
+  teacherPhoto: '/teacher.webp',
+
   /** Short subject label. Also feeds manifest short_name (12-char limit). */
   subjectName: process.env.NEXT_PUBLIC_SUBJECT_NAME ?? 'الكيمياء',
 

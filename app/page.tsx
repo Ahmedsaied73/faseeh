@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { TeacherStage } from '@/components/teacher-stage';
 import { Reveal } from '@/components/reveal';
 import { AnimatedNumber } from '@/components/animated-number';
 import { AiAssistantDemo } from '@/components/ai-assistant-demo';
 import { siteConfig } from '@/lib/site-config';
+import { ACTIVE_SUBJECT, subject } from '@/lib/subject-theme';
 
 export const metadata: Metadata = {
   title: { absolute: siteConfig.tagline },
@@ -40,17 +42,22 @@ export default function Home() {
     <main className="w-full min-h-screen bg-brand-bg" dir="rtl">
 
       {/* ── HERO ── */}
-      <section className="mx-auto max-w-6xl px-4 pt-10 pb-16 sm:px-6 sm:pt-16">
+      <section className={"mx-auto max-w-6xl px-4 pt-10 pb-16 sm:px-6 sm:pt-16 " + (ACTIVE_SUBJECT === 'arabic' ? 'arabesque-bg' : '')}>
         <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <Reveal className="text-center lg:text-start">
             <span className="rounded-full bg-brand-secondary/10 px-3 py-1 text-xs font-semibold text-brand-secondary">
-              منصة تعليمية متخصصة في الكيمياء
+              {subject.heroBadge}
             </span>
             <h1 className="mx-auto mt-5 max-w-2xl text-3xl font-extrabold leading-tight text-brand-text sm:text-5xl lg:mx-0">
-              الأستاذ عبدالهادي موسى
+              {subject.teacherName}
             </h1>
+            {ACTIVE_SUBJECT === 'arabic' && (
+              <svg viewBox="0 0 200 20" className="mx-auto mt-2 h-4 w-44 text-brand-primary lg:mx-0" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+                <path d="M4 12 C 40 2, 70 22, 100 12 S 160 2, 196 12" pathLength={1} className="subj-draw" />
+              </svg>
+            )}
             <p className="mx-auto mt-4 max-w-xl text-base text-brand-muted sm:text-lg lg:mx-0">
-              في مادة الكيمياء… مفيش صعوبة هتواجهك تاني. اكتشف التعلم والفهم العميق بأسلوب متطور.
+              {subject.heroSub}
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <Link
@@ -68,19 +75,8 @@ export default function Home() {
             </div>
           </Reveal>
 
-          <Reveal delayMs={90} className="flex justify-center lg:justify-end">
-            {/* Teacher photo slot — replace the placeholder with a real portrait (recommended ~800x800, centered face, transparent or brand-bg background works best). */}
-            <div className="relative flex aspect-square w-56 items-center justify-center rounded-[2rem] border-2 border-dashed border-brand-secondary/40 bg-brand-surface/60 text-center backdrop-blur sm:w-72">
-              <div className="hero-glow absolute -inset-3 -z-10 rounded-[2.5rem] bg-gradient-to-br from-brand-primary/15 to-brand-accent/15 blur-xl" aria-hidden="true" />
-              <div className="px-4 text-brand-secondary">
-                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" className="mx-auto" aria-hidden="true">
-                  <circle cx="12" cy="8" r="3.4" stroke="currentColor" strokeWidth="1.6" />
-                  <path d="M5 19.5c1.6-3.2 4.2-4.8 7-4.8s5.4 1.6 7 4.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                </svg>
-                <p className="mt-3 text-sm font-semibold">صورة المعلم هنا</p>
-                <p className="mt-1 text-xs text-brand-muted">مقاس مقترح ٨٠٠×٨٠٠</p>
-              </div>
-            </div>
+          <Reveal delayMs={90} className="flex justify-center items-center lg:justify-end">
+            <TeacherStage src="/teacher.webp" alt={subject.teacherName} />
           </Reveal>
         </div>
 

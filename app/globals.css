@@ -404,5 +404,114 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
+  /* ---- Video dynamic DRM watermark subtle continuous drift ---- */
+  @keyframes watermarkDrift {
+    0% {
+      transform: translate3d(0px, 0px, 0px);
+    }
+    25% {
+      transform: translate3d(6px, -4px, 0px);
+    }
+    50% {
+      transform: translate3d(-5px, 5px, 0px);
+    }
+    75% {
+      transform: translate3d(5px, 3px, 0px);
+    }
+    100% {
+      transform: translate3d(0px, 0px, 0px);
+    }
+  }
+
+  @keyframes watermarkGhostDrift {
+    0% {
+      transform: translate3d(0px, 0px, 0px);
+    }
+    33% {
+      transform: translate3d(-8px, 6px, 0px);
+    }
+    66% {
+      transform: translate3d(7px, -6px, 0px);
+    }
+    100% {
+      transform: translate3d(0px, 0px, 0px);
+    }
+  }
+
+  .animate-watermark-drift {
+    animation: watermarkDrift 8s ease-in-out infinite;
+  }
+
+  .animate-watermark-ghost {
+    animation: watermarkGhostDrift 11s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-watermark-drift,
+    .animate-watermark-ghost {
+      animation: none;
+    }
+  }
+
+  /* Fullscreen player container styling to ensure watermark overlay persists seamlessly */
+  :fullscreen.video-player-container,
+  :-webkit-full-screen.video-player-container {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    aspect-ratio: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: #000 !important;
+  }
+
+  :fullscreen.video-player-container iframe,
+  :-webkit-full-screen.video-player-container iframe {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
   /* Shared treatment for the authenticated learning workspace. */
 }
+
+/* ---- Teacher hero stage (append to the global stylesheet) ----
+   Self-contained: only transform/opacity animations, all prefixed "stage-". */
+
+@keyframes stage-spin { to { transform: rotate(360deg); } }
+@keyframes stage-spin-rev { to { transform: rotate(-360deg); } }
+@keyframes stage-drift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes stage-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes stage-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes stage-glow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.06); }
+}
+
+.stage-spin { animation: stage-spin 70s linear infinite; transform-box: fill-box; transform-origin: center; }
+.stage-spin-rev { animation: stage-spin-rev 90s linear infinite; transform-box: fill-box; transform-origin: center; }
+.stage-drift { animation: stage-drift 9s ease-in-out infinite; }
+.stage-in { animation: stage-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.stage-draw { stroke-dasharray: 1; animation: stage-draw 2.6s ease-in-out infinite alternate; }
+.stage-glow { animation: stage-glow 5s ease-in-out infinite; }
+
+/* mouse parallax: --px / --py are set from JS, --d is the per-layer depth */
+.stage-par {
+  transform: translate3d(calc(var(--px, 0) * var(--d, 0) * 1px), calc(var(--py, 0) * var(--d, 0) * 1px), 0);
+  transition: transform 0.35s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-spin, .stage-spin-rev, .stage-drift, .stage-in, .stage-draw, .stage-glow { animation: none; }
+  .stage-draw { stroke-dashoffset: 0; }
+}
