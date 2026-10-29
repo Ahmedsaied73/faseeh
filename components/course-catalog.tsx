@@ -71,7 +71,7 @@ function CourseCardThumbnail({
           <path d="M20 5.5C17.5 4.2 15 4 12 5v14c3-1 5.5-.8 8 .5V5.5Z" stroke="currentColor" strokeWidth="1.4" />
         </svg>
       )}
-      <span className="absolute top-3 start-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-brand-primary shadow-sm backdrop-blur-xs">
+      <span className="absolute bottom-3 end-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-brand-primary shadow-sm backdrop-blur-xs">
         {formatGrade(grade)}
       </span>
     </div>
