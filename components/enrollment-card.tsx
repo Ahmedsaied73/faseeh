@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Ticket } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { enrollInCourse } from '@/services/courseService';
@@ -12,9 +13,22 @@ import { useAppSelector } from '@/store/hooks';
 import { selectUser } from '@/store/slices/authSlice';
 import { RedeemCodeModal } from '@/components/RedeemCodeModal';
 
+const GRADE_LABELS: Record<string, string> = {
+  FIRST_SECONDARY: 'الصف الأول الثانوي',
+  SECOND_SECONDARY: 'الصف الثاني الثانوي',
+  THIRD_SECONDARY: 'الصف الثالث الثانوي',
+};
+
+function formatGrade(grade?: string | null): string {
+  if (!grade) return 'دورة تعليمية';
+  return GRADE_LABELS[grade] || grade;
+}
+
 interface EnrollmentCardProps {
   courseSlug: string;
   courseTitle?: string;
+  courseThumbnail?: string | null;
+  grade?: string;
   isEnrolled: boolean;
   coursePrice: string | number;
   courseDuration: string | number;
@@ -35,6 +49,8 @@ const PERKS = [
 export function EnrollmentCard({
   courseSlug,
   courseTitle,
+  courseThumbnail,
+  grade,
   isEnrolled,
   coursePrice,
   courseDuration,
@@ -49,6 +65,19 @@ export function EnrollmentCard({
   const accessCodesEnabled = user?.features?.accessCodes !== false;
   const [loading, setLoading] = useState(false);
   const [redeemModalOpen, setRedeemModalOpen] = useState(false);
+  const [thumbError, setThumbError] = useState(false);
+
+  useEffect(() => {
+    setThumbError(false);
+  }, [courseThumbnail]);
+
+  const showThumbnail = !thumbError && Boolean(
+    courseThumbnail &&
+    typeof courseThumbnail === 'string' &&
+    courseThumbnail.trim() &&
+    !courseThumbnail.includes('placeholder.com') &&
+    !courseThumbnail.includes('via.placeholder')
+  );
 
   const handleEnrollment = async () => {
     if (isEnrolled) return toast.success('أنت مشترك بالفعل في هذا الكورس');
@@ -95,18 +124,40 @@ export function EnrollmentCard({
   return (
     <div className={cn('sticky top-24 space-y-5', className)}>
       <div className="overflow-hidden rounded-xl border border-brand-border bg-brand-surface shadow-sm">
-        <div className="relative flex h-44 items-center justify-center bg-gradient-to-br from-brand-primary to-brand-secondary">
+        <div className="relative flex h-48 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-brand-primary to-brand-secondary group">
+          {showThumbnail && (
+            <>
+              <Image
+                src={courseThumbnail!}
+                alt={courseTitle || 'صورة الدورة'}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 360px"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                unoptimized
+                onError={() => setThumbError(true)}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10 pointer-events-none" />
+            </>
+          )}
+
+          {grade && (
+            <span className="absolute top-3 start-3 z-10 rounded-full bg-brand-primary text-white px-2.5 py-1 text-xs font-semibold shadow-md backdrop-blur-xs">
+              {formatGrade(grade)}
+            </span>
+          )}
+
           {primaryVideoHref ? (
             <Link
               href={primaryVideoHref}
               aria-label="تشغيل الفيديو التعريفي"
-              className="grid h-14 w-14 place-items-center rounded-full bg-white/90 text-brand-primary shadow transition hover:scale-105"
+              className="relative z-10 grid h-14 w-14 place-items-center rounded-full bg-white/95 text-brand-primary shadow-lg transition hover:scale-110 hover:bg-white"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="translate-x-[-1px]"><path d="M8 5v14l11-7L8 5Z" /></svg>
             </Link>
           ) : (
-            <span className="grid h-14 w-14 place-items-center rounded-full bg-white/90 text-brand-primary shadow">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
+            <span className="relative z-10 grid h-14 w-14 place-items-center rounded-full bg-white/95 text-brand-primary shadow-lg">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="translate-x-[-1px]"><path d="M8 5v14l11-7L8 5Z" /></svg>
             </span>
           )}
         </div>

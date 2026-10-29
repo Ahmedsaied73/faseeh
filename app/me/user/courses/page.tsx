@@ -12,6 +12,50 @@ import { PageTitle } from '@/components/page-title';
 import { withTeacher } from '@/lib/site-config';
 import { PAGE_TITLES } from '@/lib/page-titles';
 
+const GRADE_LABELS: Record<string, string> = {
+  FIRST_SECONDARY: 'الأول الثانوي',
+  SECOND_SECONDARY: 'الثاني الثانوي',
+  THIRD_SECONDARY: 'الثالث الثانوي',
+};
+
+function formatGrade(grade?: string | null): string {
+  if (!grade) return 'دورة تعليمية';
+  return GRADE_LABELS[grade] || grade;
+}
+
+function EnrolledCourseThumbnail({ thumbnail, title }: { thumbnail?: string; title?: string }) {
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [thumbnail]);
+
+  const showImage = !imageError && Boolean(
+    thumbnail &&
+    typeof thumbnail === 'string' &&
+    thumbnail.trim() &&
+    !thumbnail.includes('placeholder.com') &&
+    !thumbnail.includes('via.placeholder')
+  );
+
+  return (
+    <div className="relative w-full h-40 mb-4 overflow-hidden rounded-md bg-gradient-to-br from-brand-primary to-brand-secondary group flex items-center justify-center">
+      {showImage ? (
+        <Image 
+          src={thumbnail!} 
+          alt={title || 'Course'} 
+          fill 
+          unoptimized
+          className="object-cover transition-transform group-hover:scale-105" 
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <BookOpen className="h-10 w-10 text-white/80" />
+      )}
+    </div>
+  );
+}
+
 export default function UserCoursesPage() {
   const [courses, setCourses] = useState<CourseListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,14 +120,7 @@ export default function UserCoursesPage() {
               {courses.map((course) => (
                 <Link href={`/course/${course.slug}`} key={course.slug}>
                   <div className="bg-surface-container rounded-lg p-4 h-full hover:bg-surface-container transition-colors cursor-pointer">
-                    <div className="relative w-full h-40 mb-4 overflow-hidden rounded-md group">
-                      <Image 
-                        src={course.thumbnail || '/placeholder.jpg'} 
-                        alt={course.title || 'Course'} 
-                        fill 
-                        className="object-cover transition-transform group-hover:scale-105" 
-                      />
-                    </div>
+                    <EnrolledCourseThumbnail thumbnail={course.thumbnail} title={course.title} />
                     <h3 className="text-xl font-bold mb-2 text-primary-color line-clamp-1">{course.title}</h3>
                     <p className="text-on-surface-variant mb-3 line-clamp-2 h-12">{course.description}</p>
                     <div className="flex items-center justify-between mt-auto">
@@ -94,7 +131,7 @@ export default function UserCoursesPage() {
                       <div className="flex items-center gap-2">
                         <div className="flex items-center text-on-surface-variant">
                           <BookOpenCheck className="h-4 w-4 ml-1" />
-                          <span className="text-sm">{course.grade}</span>
+                          <span className="text-sm">{formatGrade(course.grade)}</span>
                         </div>
                       </div>
                     </div>

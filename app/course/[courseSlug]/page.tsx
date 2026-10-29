@@ -152,14 +152,19 @@ export default function Page({ params }: { params: { courseSlug: string } }) {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           {/* Main Content: Title + Lessons */}
           <Reveal className="order-2 lg:order-1">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div>
                 <h1 className="text-xl font-extrabold text-brand-text sm:text-2xl">
                   {courseData.title}
                 </h1>
-                <p className="mt-1 text-sm text-brand-muted">مرجع الدورة {params.courseSlug}</p>
+                {courseData.description && (
+                  <p className="mt-2 text-sm text-brand-muted leading-relaxed">
+                    {courseData.description}
+                  </p>
+                )}
+                <p className="mt-1.5 text-xs text-brand-muted/70">مرجع الدورة {params.courseSlug}</p>
               </div>
-              <span className="rounded-full bg-brand-secondary/10 px-3 py-1 text-xs font-semibold text-brand-secondary">
+              <span className="shrink-0 rounded-full bg-brand-secondary/10 px-3 py-1 text-xs font-semibold text-brand-secondary">
                 منهج معتمد
               </span>
             </div>
@@ -259,6 +264,8 @@ export default function Page({ params }: { params: { courseSlug: string } }) {
             <EnrollmentCard
               courseSlug={params.courseSlug}
               courseTitle={courseData?.title}
+              courseThumbnail={courseData?.thumbnail}
+              grade={courseData?.grade}
               isEnrolled={isEnrolled}
               coursePrice={courseData.price || 'مجاني'}
               courseDuration={courseDuration}

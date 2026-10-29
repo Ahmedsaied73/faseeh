@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { CourseListItem, fetchAllCourses } from '@/services/courseService';
 import { Reveal } from '@/components/reveal';
@@ -10,6 +11,71 @@ type Filter = (typeof FILTERS)[number];
 
 function isFree(c: CourseListItem): boolean {
   return !c.price || c.price <= 0;
+}
+
+const GRADE_LABELS: Record<string, string> = {
+  FIRST_SECONDARY: 'الصف الأول الثانوي',
+  SECOND_SECONDARY: 'الصف الثاني الثانوي',
+  THIRD_SECONDARY: 'الصف الثالث الثانوي',
+};
+
+function formatGrade(grade?: string | null): string {
+  if (!grade) return 'دورة تعليمية';
+  return GRADE_LABELS[grade] || grade;
+}
+
+function isValidThumbnail(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  if (trimmed.includes('placeholder.com')) return false;
+  if (trimmed.includes('via.placeholder')) return false;
+  return true;
+}
+
+function CourseCardThumbnail({
+  thumbnail,
+  title,
+  grade,
+}: {
+  thumbnail?: string;
+  title: string;
+  grade?: string;
+}) {
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [thumbnail]);
+
+  const showImage = !imageError && isValidThumbnail(thumbnail);
+
+  return (
+    <div className="relative flex h-40 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-brand-primary to-brand-secondary">
+      {showImage ? (
+        <>
+          <Image
+            src={thumbnail!}
+            alt={title}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            unoptimized
+            onError={() => setImageError(true)}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10 pointer-events-none" />
+        </>
+      ) : (
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" className="text-white/90">
+          <path d="M4 5.5C6.5 4.2 9 4 12 5v14c-3-1-5.5-.8-8 .5V5.5Z" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M20 5.5C17.5 4.2 15 4 12 5v14c3-1 5.5-.8 8 .5V5.5Z" stroke="currentColor" strokeWidth="1.4" />
+        </svg>
+      )}
+      <span className="absolute top-3 start-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-brand-primary shadow-sm backdrop-blur-xs">
+        {formatGrade(grade)}
+      </span>
+    </div>
+  );
 }
 
 export function CourseCatalog() {
@@ -85,16 +151,12 @@ export function CourseCatalog() {
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((course, i) => (
             <Reveal key={course.slug} delayMs={i * 70}>
-              <article className="flex h-full flex-col overflow-hidden rounded-xl border border-brand-border bg-brand-surface transition hover:-translate-y-0.5 hover:shadow-md">
-                <div className="relative flex h-36 items-center justify-center bg-gradient-to-br from-brand-primary to-brand-secondary">
-                  <span className="absolute top-3 start-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-brand-primary">
-                    {course.grade || 'دورة تعليمية'}
-                  </span>
-                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" className="text-white/90">
-                    <path d="M4 5.5C6.5 4.2 9 4 12 5v14c-3-1-5.5-.8-8 .5V5.5Z" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M20 5.5C17.5 4.2 15 4 12 5v14c3-1 5.5-.8 8 .5V5.5Z" stroke="currentColor" strokeWidth="1.4" />
-                  </svg>
-                </div>
+              <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-brand-border bg-brand-surface transition hover:-translate-y-0.5 hover:shadow-md">
+                <CourseCardThumbnail
+                  thumbnail={course.thumbnail}
+                  title={course.title}
+                  grade={course.grade}
+                />
                 <div className="flex flex-1 flex-col p-5">
                   <h3 className="text-base font-bold text-brand-text">{course.title}</h3>
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-brand-muted">

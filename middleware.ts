@@ -4,12 +4,24 @@ import type { NextRequest } from 'next/server';
 // Routes that require authentication (F-3: /admin added — same UX-signal
 // semantics as below; real admin enforcement stays server-side via 403s,
 // plus the client layout role guard).
-const protectedRoutes = ['/me', '/course', '/admin'];
+// Routes that require authentication:
+// - /me and /admin always require authentication.
+// - Inside /course, lessons and subscription flows (/video/, /subscribe/) require auth,
+//   while the course outline/overview (/course/:slug or /course/:id) remains publicly viewable.
+function isPathProtected(pathname: string): boolean {
+  if (pathname.startsWith('/me') || pathname.startsWith('/admin')) {
+    return true;
+  }
+  if (pathname.startsWith('/course/') && (pathname.includes('/video/') || pathname.includes('/subscribe'))) {
+    return true;
+  }
+  return false;
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+  const isProtectedRoute = isPathProtected(pathname);
   
   if (isProtectedRoute) {
     // NOTE: `isLoggedIn` is a plain (non-httpOnly) cookie, set client-side so
