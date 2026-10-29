@@ -109,10 +109,10 @@ export default function AdminQuizzesPage() {
             </p>
           </div>
           <Link
-            href="/admin/courses"
+            href="/admin/quizzes/new"
             className="rounded-full bg-brand-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
           >
-            + اختبار جديد (من الدورات)
+            + اختبار جديد
           </Link>
         </div>
 
@@ -169,7 +169,17 @@ export default function AdminQuizzesPage() {
               ) : quizzes.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-sm text-brand-muted">
-                    لا توجد اختبارات مطابقة لبحثك.
+                    <p>{search ? 'لا توجد اختبارات مطابقة لبحثك.' : 'لا توجد اختبارات مسجلة بعد على المنصة.'}</p>
+                    {!search && (
+                      <div className="mt-3">
+                        <Link
+                          href="/admin/quizzes/new"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-brand-primary/10 px-4 py-2 text-xs font-bold text-brand-primary transition hover:bg-brand-primary hover:text-white"
+                        >
+                          + إضافة أول اختبار
+                        </Link>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -199,6 +209,13 @@ export default function AdminQuizzesPage() {
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-end">
                         <div className="flex items-center justify-end gap-3">
+                          <Link
+                            href={`/admin/quizzes/new?course=${encodeURIComponent(q.courseSlug)}&video=${encodeURIComponent(q.videoSlug)}`}
+                            className="text-xs font-bold text-brand-muted-strong hover:text-brand-text hover:underline"
+                            title="تعديل الاختبار"
+                          >
+                            تعديل
+                          </Link>
                           <button
                             type="button"
                             onClick={() => setExceptionFor(q)}

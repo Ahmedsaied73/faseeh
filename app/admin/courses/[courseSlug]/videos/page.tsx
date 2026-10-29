@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, ChevronRight, FileQuestion, Film, Plus, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 import { StatusBadge } from '@/components/admin/StatusBadge';
@@ -174,10 +175,22 @@ export default function AdminCourseVideosPage() {
         )}
       </div>
       <StatusBadge status={video.status} className="shrink-0" />
-      {!video.quizSlug && (
-        <span title="هذه المحاضرة بلا اختبار — الطلاب يتقدمون بمجرد المشاهدة" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">
-          بدون اختبار
-        </span>
+      {!video.quizSlug ? (
+        <Link
+          href={`/admin/quizzes/new?course=${encodeURIComponent(courseSlug)}&video=${encodeURIComponent(video.slug)}`}
+          title="هذه المحاضرة بلا اختبار — اضغط لإضافة اختبار"
+          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700 transition hover:bg-amber-100"
+        >
+          بدون اختبار (أضف اختبار)
+        </Link>
+      ) : (
+        <Link
+          href={`/admin/quizzes/new?course=${encodeURIComponent(courseSlug)}&video=${encodeURIComponent(video.slug)}`}
+          title="تعديل اختبار هذه المحاضرة"
+          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700 transition hover:bg-sky-100"
+        >
+          به اختبار
+        </Link>
       )}
       <div className="flex shrink-0 items-center gap-1.5">
         <button type="button" title="لأعلى" disabled={index === 0} onClick={() => void doReorder(index, -1)} className="rounded-lg border border-outline-variant p-2 text-on-surface-variant transition-colors duration-150 hover:border-primary-color hover:text-on-surface disabled:opacity-30">
@@ -196,9 +209,13 @@ export default function AdminCourseVideosPage() {
             <Upload className="h-3.5 w-3.5" />
           </button>
         )}
-        <button type="button" title="اختبار الفيديو" onClick={() => router.push(`/admin/quizzes/${video.slug}`)} className="rounded-lg border border-sky-500/40 p-2 text-sky-700 transition-colors duration-150 hover:border-sky-400 hover:text-sky-200">
+        <Link
+          href={`/admin/quizzes/new?course=${encodeURIComponent(courseSlug)}&video=${encodeURIComponent(video.slug)}`}
+          title={video.quizSlug ? 'تعديل اختبار الفيديو' : 'إضافة اختبار للفيديو'}
+          className="rounded-lg border border-sky-500/40 p-2 text-sky-700 transition-colors duration-150 hover:border-sky-400 hover:text-sky-200"
+        >
           <FileQuestion className="h-3.5 w-3.5" />
-        </button>
+        </Link>
         <button type="button" title="حذف" onClick={() => setDeleting(video)} className="rounded-lg border border-red-200 p-2 text-red-600 transition-colors duration-150 hover:border-red-400 hover:bg-red-50">
           <Trash2 className="h-3.5 w-3.5" />
         </button>

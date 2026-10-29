@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
@@ -14,6 +14,7 @@ import type { QuizGate403, QuizMeta } from '@/types/quiz';
 import { getQuizMeta } from '@/services/quizService';
 import { PageTitle } from '@/components/page-title';
 import { videoTitle as composeVideoTitle } from '@/lib/page-titles';
+import { VideoWatermark } from '@/components/video/VideoWatermark';
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error) return error.message;
@@ -31,6 +32,7 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
   // Bunny playback and video metadata
   const [playbackData, setPlaybackData] = useState<BunnyPlaybackData | null>(null);
   const [bunnyVideo, setBunnyVideo] = useState<BunnyVideo | null>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
 
   // Loading & error states
   const [isLoading, setIsLoading] = useState(true);
@@ -307,7 +309,10 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
     );
   } else if (playbackData?.playbackUrl) {
     playerContent = (
-      <div className="relative aspect-video w-full overflow-hidden bg-black">
+      <div
+        ref={playerContainerRef}
+        className="relative aspect-video w-full overflow-hidden bg-black select-none video-player-container"
+      >
         <iframe
           src={playbackData.playbackUrl}
           loading="lazy"
@@ -316,6 +321,7 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
           allowFullScreen
           title={bunnyVideo?.title || "مشغل فيديو Bunny Stream"}
         />
+        <VideoWatermark containerRef={playerContainerRef} />
       </div>
     );
   } else {

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 import { upsertQuiz, uploadQuizImage } from "@/services/adminQuizService";
+import { getQuizMeta } from "@/services/quizService";
 import QuestionImagePicker from "./QuestionImagePicker";
 import type { StudentSafeQuiz, UpsertQuizInput } from "@/types/quiz";
 
@@ -32,6 +34,9 @@ interface AuthorQuestion {
 
 interface QuizAuthoringFormProps {
   videoSlug: string;
+  videoTitle?: string;
+  courseTitle?: string;
+  onSuccess?: (savedQuiz: StudentSafeQuiz) => void;
 }
 
 function newChoice(text = ""): AuthorChoice {
@@ -132,7 +137,7 @@ function buildPayload(title: string, timeLimit: string, passingScore: string, qu
   };
 }
 
-export default function QuizAuthoringForm({ videoSlug }: QuizAuthoringFormProps) {
+export default function QuizAuthoringForm({ videoSlug, videoTitle, courseTitle, onSuccess }: QuizAuthoringFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [timeLimit, setTimeLimit] = useState("");
@@ -141,6 +146,38 @@ export default function QuizAuthoringForm({ videoSlug }: QuizAuthoringFormProps)
   const [isSaving, setIsSaving] = useState(false);
   const [savedQuiz, setSavedQuiz] = useState<StudentSafeQuiz | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasExistingQuiz, setHasExistingQuiz] = useState<boolean | null>(null);
+  const [fetchedVideoTitle, setFetchedVideoTitle] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    getQuizMeta(videoSlug)
+      .then((meta) => {
+        if (!isMounted) return;
+        if (meta.videoTitle && !videoTitle) {
+          setFetchedVideoTitle(meta.videoTitle);
+        }
+        if (meta.exists) {
+          setHasExistingQuiz(true);
+          if (meta.title) setTitle((prev) => prev || meta.title || "");
+          if (meta.timeLimitSec != null) setTimeLimit((prev) => prev || String(meta.timeLimitSec));
+          if (meta.passingScore != null) setPassingScore((prev) => prev === "50" ? String(meta.passingScore) : prev);
+        } else {
+          setHasExistingQuiz(false);
+          const effectiveTitle = videoTitle || meta.videoTitle;
+          if (effectiveTitle) {
+            setTitle((prev) => prev || `اختبار: ${effectiveTitle}`);
+          }
+        }
+      })
+      .catch(() => {
+        if (isMounted) setHasExistingQuiz(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [videoSlug, videoTitle]);
 
   const updateQuestion = (id: string, patch: Partial<AuthorQuestion>) => {
     setQuestions((current) => current.map((question) => question.id === id ? { ...question, ...patch } : question));
@@ -240,6 +277,7 @@ export default function QuizAuthoringForm({ videoSlug }: QuizAuthoringFormProps)
     try {
       const result = await upsertQuiz(videoSlug, buildPayload(title, timeLimit, passingScore, questions));
       setSavedQuiz(result);
+      onSuccess?.(result);
     } catch (saveError) {
       setError(errorMessage(saveError));
     } finally {
@@ -247,11 +285,36 @@ export default function QuizAuthoringForm({ videoSlug }: QuizAuthoringFormProps)
     }
   };
 
+  const displayVideoTitle = videoTitle || fetchedVideoTitle;
+  const isEditing = hasExistingQuiz === true;
+
   return (
     <form onSubmit={handleSubmit} dir="rtl" className="space-y-6">
       <section className="rounded-xl border border-outline-variant/70 bg-card p-6">
-        <h1 className="text-xl font-bold text-on-surface">إنشاء اختبار للفيديو {videoSlug}</h1>
-        <p className="mt-1 text-sm text-on-surface-variant">الحفظ يستبدل تعريف الاختبار الحالي لهذا الفيديو.</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-xl font-bold text-on-surface">
+            {displayVideoTitle
+              ? (isEditing ? `تعديل اختبار: ${displayVideoTitle}` : `إعداد اختبار جديد: ${displayVideoTitle}`)
+              : (isEditing ? `تعديل اختبار للفيديو ${videoSlug}` : `إنشاء اختبار جديد للفيديو ${videoSlug}`)}
+          </h1>
+          {isEditing ? (
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+              تعديل اختبار مسجل
+            </span>
+          ) : hasExistingQuiz === false ? (
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+              اختبار جديد
+            </span>
+          ) : null}
+        </div>
+        {courseTitle && (
+          <p className="mt-1 text-xs font-semibold text-brand-primary">الدورة التدريبية: {courseTitle}</p>
+        )}
+        <p className="mt-1 text-sm text-on-surface-variant">
+          {isEditing
+            ? 'تعديل هذا النموذج وحفظه سيقوم بتحديث تعريف الاختبار الحالي وأسئلته لهذا الفيديو.'
+            : 'حدد عنوان الاختبار والمدة ونسبة النجاح ثم أضف أسئلة الاختبار بالأسفل.'}
+        </p>
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
           <label className="sm:col-span-3 text-sm font-semibold text-on-surface/80">عنوان الاختبار
             <input value={title} onChange={(event) => setTitle(event.target.value)} className="mt-1 w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-primary-color focus:outline-hidden focus:ring-2 focus:ring-primary-color/20" />
@@ -380,10 +443,30 @@ export default function QuizAuthoringForm({ videoSlug }: QuizAuthoringFormProps)
       ))}
 
       {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}
-      {savedQuiz && <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">
-        <span>تم حفظ الاختبار بنجاح.</span>
-        <button type="button" onClick={() => router.push(`/admin/quizzes/quiz/${savedQuiz.slug}/attempts`)} className="rounded-lg bg-primary-color px-3 py-2 text-sm font-bold text-white transition-colors duration-150 hover:bg-[#0057c0]">فتح طابور التصحيح</button>
-      </div>}
+      {savedQuiz && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+            <span>تم حفظ الاختبار بنجاح.</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push(`/admin/quizzes/quiz/${savedQuiz.slug}/attempts`)}
+              className="rounded-lg bg-brand-primary px-3.5 py-2 text-xs font-bold text-white transition hover:bg-brand-primary/90"
+            >
+              فتح طابور التصحيح
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/admin/quizzes')}
+              className="rounded-lg border border-emerald-300 bg-white px-3.5 py-2 text-xs font-bold text-emerald-900 transition hover:bg-emerald-100"
+            >
+              العودة إلى الاختبارات
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex gap-3">
         <button type="button" onClick={() => setQuestions((current) => [...current, newQuestion()])} className="rounded-lg border border-outline-variant px-4 py-2.5 font-semibold text-on-surface-variant transition-colors duration-150 hover:border-primary-color hover:text-[#0057c0]">إضافة عنصر</button>
         <button type="submit" disabled={isSaving || anyUploading} className="rounded-lg bg-primary-color px-5 py-2.5 text-sm font-bold text-white transition-colors duration-150 hover:bg-[#0057c0] disabled:opacity-60 disabled:cursor-not-allowed">{isSaving ? "جاري الحفظ..." : "حفظ الاختبار"}</button>
