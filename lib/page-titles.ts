@@ -8,7 +8,7 @@
  * Used two ways:
  *  1. Server-side `metadata` exports (root-level `PAGE_TITLES` entries) via
  *     Next's title template in app/layout.tsx → rendered as
- *     `<title> | الأستاذ عبد الهادي موسى`.
+ *     `<title> | الأستاذ محمد ممدوح`.
  *  2. The shared <PageTitle> component (components/page-title.tsx) for
  *     client-rendered pages (admin console, account area, course player),
  *     where Next 13.5 cannot export `metadata`. It composes the final

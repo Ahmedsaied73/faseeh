@@ -113,6 +113,14 @@ const nextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: '/manifest.webmanifest',
+        destination: '/site.webmanifest',
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

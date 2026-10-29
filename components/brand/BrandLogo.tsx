@@ -152,4 +152,12 @@ export function BrandSymbol(props: Omit<BrandLogoProps, 'variant'>) {
   return <BrandLogo variant="symbol" {...props} />;
 }
 
+export function BrandStacked(props: Omit<BrandLogoProps, 'variant'>) {
+  return <BrandLogo variant="stacked" {...props} />;
+}
+
+export function BrandWordmark(props: Omit<BrandLogoProps, 'variant'>) {
+  return <BrandLogo variant="wordmark" {...props} />;
+}
+
 export default BrandLogo;
