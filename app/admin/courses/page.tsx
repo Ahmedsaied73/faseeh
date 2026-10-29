@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Pencil, Trash2, ChevronDown, Plus, ArrowUp, ArrowDown } from 'lucide-react';
+import { Pencil, Trash2, ChevronDown, Plus, ArrowUp, ArrowDown, FileQuestion, BookOpen } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
+import { CourseImagePicker } from '@/components/admin/CourseImagePicker';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,9 +61,11 @@ interface CourseFormState {
   price: string;
   grade: GradeEnum | '';
   category: string;
+  thumbnail: string;
 }
 
-const EMPTY_FORM: CourseFormState = { title: '', description: '', price: '', grade: '', category: '' };
+const EMPTY_FORM: CourseFormState = { title: '', description: '', price: '', grade: '', category: '', thumbnail: '' };
+
 
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<AdminCourse[]>([]);
@@ -83,6 +87,7 @@ export default function AdminCoursesPage() {
   const [editingCourse, setEditingCourse] = useState<AdminCourse | null>(null);
   const [form, setForm] = useState<CourseFormState>(EMPTY_FORM);
   const [formBusy, setFormBusy] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
 
   // Delete Course Confirm
   const [deletingCourse, setDeletingCourse] = useState<AdminCourse | null>(null);
@@ -157,6 +162,7 @@ export default function AdminCoursesPage() {
   const handleOpenCreate = () => {
     setEditingCourse(null);
     setForm(EMPTY_FORM);
+    setImageUploading(false);
     setDialogOpen(true);
   };
 
@@ -168,7 +174,9 @@ export default function AdminCoursesPage() {
       price: c.price != null ? String(c.price) : '',
       grade: (c.grade as GradeEnum) || '',
       category: c.category || '',
+      thumbnail: c.thumbnail || '',
     });
+    setImageUploading(false);
     setDialogOpen(true);
   };
 
@@ -179,12 +187,18 @@ export default function AdminCoursesPage() {
       return;
     }
 
+    if (imageUploading) {
+      toast.error('يرجى الانتظار حتى يكتمل رفع صورة الدورة.');
+      return;
+    }
+
     const payload = {
       title: form.title.trim(),
-      description: form.description.trim(),
+      description: form.description.trim() || form.title.trim(),
       price: form.price === '' ? 0 : Number(form.price),
       grade: form.grade,
       category: form.category.trim() || undefined,
+      thumbnail: form.thumbnail.trim() ? form.thumbnail.trim() : (editingCourse ? '' : undefined),
     };
 
     setFormBusy(true);
@@ -319,11 +333,28 @@ export default function AdminCoursesPage() {
                       onClick={() => toggleCourseAccordion(c)}
                       className="flex flex-1 items-center justify-between gap-2.5 sm:gap-3 text-start outline-none"
                     >
-                      <div>
-                        <p className="text-sm sm:text-base font-bold text-brand-text">{c.title}</p>
-                        <p className="mt-0.5 text-[11px] sm:text-xs text-brand-muted">
-                          {gradeText} {c.category ? `· ${c.category}` : ''} · {formatDate(c.createdAt)}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {c.thumbnail && !c.thumbnail.includes('placeholder.com') ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={c.thumbnail}
+                            alt=""
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                            className="h-10 w-14 shrink-0 rounded-lg object-cover border border-brand-border bg-brand-bg"
+                          />
+                        ) : (
+                          <div className="flex h-10 w-14 shrink-0 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary border border-brand-border">
+                            <BookOpen className="h-5 w-5" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm sm:text-base font-bold text-brand-text">{c.title}</p>
+                          <p className="mt-0.5 text-[11px] sm:text-xs text-brand-muted">
+                            {gradeText} {c.category ? `· ${c.category}` : ''} · {formatDate(c.createdAt)}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 sm:gap-5 text-[11px] sm:text-xs">
                         <span className="hidden text-brand-muted-strong sm:inline">
@@ -381,15 +412,24 @@ export default function AdminCoursesPage() {
                               <span className="font-medium text-brand-text">{v.title}</span>
                               <div className="flex items-center gap-3 text-xs text-brand-muted">
                                 <span>{formatDuration(v.duration)}</span>
-                                <span
+                                <Link
+                                  href={`/admin/quizzes/new?course=${encodeURIComponent(c.slug)}&video=${encodeURIComponent(v.slug)}`}
                                   className={
-                                    'rounded-full px-2 py-0.5 font-bold ' +
-                                    (v.quizSlug ? 'bg-brand-primary/10 text-brand-primary' : 'bg-brand-chip text-brand-muted')
+                                    'rounded-full px-2 py-0.5 font-bold transition hover:opacity-80 ' +
+                                    (v.quizSlug ? 'bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20' : 'bg-brand-chip text-brand-muted hover:bg-brand-hover')
                                   }
+                                  title={v.quizSlug ? 'تعديل الاختبار' : 'إضافة اختبار لهذا الفيديو'}
                                 >
                                   {v.quizSlug ? 'به اختبار' : 'بدون اختبار'}
-                                </span>
+                                </Link>
                                 <div className="flex items-center gap-1 border-s border-brand-border ps-2">
+                                  <Link
+                                    href={`/admin/quizzes/new?course=${encodeURIComponent(c.slug)}&video=${encodeURIComponent(v.slug)}`}
+                                    className="p-0.5 text-brand-muted hover:text-brand-primary transition-colors"
+                                    title={v.quizSlug ? 'تعديل اختبار الفيديو' : 'إضافة اختبار للفيديو'}
+                                  >
+                                    <FileQuestion className="h-3.5 w-3.5" />
+                                  </Link>
                                   <button
                                     type="button"
                                     disabled={idx === 0}
@@ -456,13 +496,25 @@ export default function AdminCoursesPage() {
 
       {/* Create / Edit Course Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-brand-surface border-brand-border">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-brand-surface border-brand-border">
           <DialogHeader>
             <DialogTitle className="text-brand-text font-bold">
               {editingCourse ? 'تعديل الدورة' : 'إنشاء دورة جديدة'}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleFormSubmit} className="space-y-4 pt-2">
+            {/* Course Photo Media Picker */}
+            <div>
+              <Label className="text-xs font-semibold text-brand-text mb-1.5 block">
+                صورة غلاف الدورة
+              </Label>
+              <CourseImagePicker
+                value={form.thumbnail}
+                onChange={(url) => setForm((f) => ({ ...f, thumbnail: url }))}
+                onUploadingChange={setImageUploading}
+                disabled={formBusy}
+              />
+            </div>
             <div>
               <Label className="text-xs font-semibold text-brand-text">عنوان الدورة *</Label>
               <Input
@@ -521,10 +573,16 @@ export default function AdminCoursesPage() {
             <DialogFooter className="gap-2 sm:justify-start pt-2">
               <button
                 type="submit"
-                disabled={formBusy}
+                disabled={formBusy || imageUploading}
                 className="rounded-full bg-brand-primary px-5 py-2 text-xs font-bold text-white transition hover:bg-brand-primary/90 disabled:opacity-50"
               >
-                {formBusy ? 'جارٍ الحفظ...' : editingCourse ? 'حفظ التعديلات' : 'إنشاء الدورة'}
+                {formBusy
+                  ? 'جارٍ الحفظ...'
+                  : imageUploading
+                  ? 'جارٍ رفع الصورة...'
+                  : editingCourse
+                  ? 'حفظ التعديلات'
+                  : 'إنشاء الدورة'}
               </button>
               <button
                 type="button"

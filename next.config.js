@@ -72,6 +72,12 @@ const nextConfig = {
         hostname: 'img.youtube.com',
         pathname: '/**',
       },
+      // Supabase Storage (course thumbnails and images)
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+        pathname: '/**',
+      },
     ],
   },
   async headers() {

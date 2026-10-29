@@ -7,6 +7,7 @@ import { siteConfig } from '@/lib/site-config';
 import { ReduxProvider } from '@/store/provider';
 import { AuthInitializer } from '@/store/auth-initializer';
 import { Toaster } from '@/components/ui/toaster';
+import { Toaster as HotToaster } from 'react-hot-toast';
 
 // Brand typeface — THE single font declaration (see app/brand-theme.css).
 // To change the typeface: replace the woff2 files + weights below.
@@ -78,6 +79,7 @@ export default function RootLayout({
             </main>
             <Footer />
             <Toaster />
+            <HotToaster position="top-center" />
           </AuthInitializer>
         </ReduxProvider>
       </body>
