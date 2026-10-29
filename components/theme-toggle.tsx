@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'akademya-theme';
+const STORAGE_KEY = 'fasih-theme';
+const LEGACY_STORAGE_KEY = 'akademya-theme';
 
 /**
  * Theme toggle — the ONE new interactive element of the redesign, and it is
@@ -24,6 +25,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     document.documentElement.dataset.theme = next;
     try {
       window.localStorage.setItem(STORAGE_KEY, next);
+      window.localStorage.setItem(LEGACY_STORAGE_KEY, next);
     } catch {
       // Private-mode storage denial — theme still applies for this session.
     }

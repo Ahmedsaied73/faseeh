@@ -147,3 +147,17 @@
   .subj-tag-in, .subj-rise, .subj-wander, .subj-draw { animation: none; }
   .subj-draw { stroke-dashoffset: 0; }
 }
+
+/* Brand logo theme auto-switching */
+html[data-theme="dark"] .brand-logo-light {
+  display: none !important;
+}
+html[data-theme="dark"] .brand-logo-dark {
+  display: block !important;
+}
+html:not([data-theme="dark"]) .brand-logo-light {
+  display: block !important;
+}
+html:not([data-theme="dark"]) .brand-logo-dark {
+  display: none !important;
+}

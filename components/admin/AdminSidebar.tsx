@@ -10,7 +10,6 @@ import {
   ListChecks,
   GraduationCap,
   FileCheck2,
-  FlaskConical,
   ExternalLink,
   LogOut,
   Bell,
@@ -23,6 +22,7 @@ import { useAppSelector } from '@/store/hooks';
 import { selectUser } from '@/store/slices/authSlice';
 import { logoutUser } from '@/services/authService';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { BrandLogo } from '@/components/brand';
 
 const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: React.ComponentType<{ className?: string }>; feature?: 'notifications' | 'aiGrader' | 'accessCodes' }[] }[] = [
   {
@@ -101,15 +101,12 @@ export function AdminSidebar({ mobileOpen = false, onCloseMobile }: { mobileOpen
         aria-hidden={mobileOpen ? undefined : true}
       >
         <div className="flex items-center gap-2.5 border-b border-brand-border px-5 py-5">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-primary text-white">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 5.5C6.5 4.2 9 4 12 5v14c-3-1-5.5-.8-8 .5V5.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-              <path d="M20 5.5C17.5 4.2 15 4 12 5v14c3-1 5.5-.8 8 .5V5.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-            </svg>
-          </span>
+          <Link href="/" className="shrink-0 transition-opacity hover:opacity-90" aria-label="فصيح — الرئيسية">
+            <BrandLogo variant="symbol" className="h-9 w-9" />
+          </Link>
           <div className="flex-1">
             <p className="text-sm font-extrabold text-brand-text">لوحة التحكم</p>
-            <p className="text-xs text-brand-muted">أكاديميا الكيمياء</p>
+            <p className="text-xs text-brand-muted">منصة فصيح للغة العربية</p>
           </div>
           <button
             type="button"
@@ -173,12 +170,12 @@ export function AdminSidebar({ mobileOpen = false, onCloseMobile }: { mobileOpen
       {/* Brand & Theme */}
       <div className="flex h-16 items-center justify-between border-b border-brand-border px-5">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-primary text-white">
-            <FlaskConical className="h-5 w-5" aria-hidden="true" />
-          </div>
+          <Link href="/" className="shrink-0 transition-opacity hover:opacity-90" aria-label="فصيح — الرئيسية">
+            <BrandLogo variant="symbol" className="h-9 w-9" />
+          </Link>
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-brand-text">لوحة التحكم</p>
-            <p className="truncate text-[11px] text-brand-muted">أكاديمية الكيمياء</p>
+            <p className="truncate text-[11px] text-brand-muted">منصة فصيح للغة العربية</p>
           </div>
         </div>
         <ThemeToggle />

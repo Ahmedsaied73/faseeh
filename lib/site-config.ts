@@ -31,21 +31,21 @@ export const siteConfig = {
 
   /** Primary brand. Students search for this name — it anchors every title. */
   teacherName:
-    process.env.NEXT_PUBLIC_TEACHER_NAME ?? 'الأستاذ عبد الهادي موسى',
+    process.env.NEXT_PUBLIC_TEACHER_NAME ?? 'الأستاذ محمد ممدوح',
 
   /** Primary teacher photo. */
   teacherPhoto: '/teacher.webp',
 
   /** Short subject label. Also feeds manifest short_name (12-char limit). */
-  subjectName: process.env.NEXT_PUBLIC_SUBJECT_NAME ?? 'الكيمياء',
+  subjectName: process.env.NEXT_PUBLIC_SUBJECT_NAME ?? 'اللغة العربية',
 
   /** Default title + meta description + social-card subtitle. */
   tagline:
     process.env.NEXT_PUBLIC_SITE_TAGLINE ??
-    'تعلم الكيمياء بأسهل الطرق مع الأستاذ عبد الهادي موسى',
+    'فصيح — منصة تعليم اللغة العربية للثانوية العامة مع الأستاذ محمد ممدوح',
 
   /** Fixed platform mark (navbar/footer). Per owner decision: NOT white-labeled. */
-  brandMark: 'أكاديميا',
+  brandMark: 'فصيح',
 } as const;
 
 /** `%s | ${teacherName}` — shared by every static/generate metadata export. */

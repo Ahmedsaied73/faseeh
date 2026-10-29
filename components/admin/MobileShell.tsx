@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, ClipboardCheck, LayoutDashboard, School, User, Users } from 'lucide-react';
+import { Bell, ClipboardCheck, LayoutDashboard, School, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getAdminDashboard } from '@/services/adminDashboardService';
+import { BrandLogo } from '@/components/brand';
 
 const NAV_ITEMS: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { href: '/admin', label: 'نظرة عامة', icon: LayoutDashboard },
@@ -23,15 +24,13 @@ export function AdminMobileHeader() {
   return (
     <header className="pt-safe fixed top-0 z-50 w-full border-b border-outline-variant/40 bg-surface/80 backdrop-blur-xl lg:hidden">
       <div className="flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-on-primary">
-            <User className="h-[18px] w-[18px]" aria-hidden="true" />
-          </div>
+        <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-90" aria-label="فصيح — الرئيسية">
+          <BrandLogo variant="symbol" className="h-8 w-8" />
           <div className="flex flex-col">
-            <span className="max-w-[170px] truncate text-sm font-bold text-on-surface">أكاديمية الكيمياء</span>
+            <span className="max-w-[170px] truncate text-sm font-bold text-on-surface">منصة فصيح</span>
             <span className="text-caption leading-none text-on-surface-variant">لوحة التحكم</span>
           </div>
-        </div>
+        </Link>
         <button
           type="button"
           aria-label="الإشعارات"

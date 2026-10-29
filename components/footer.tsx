@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { subject } from "@/lib/subject-theme";
+import { BrandLogo } from "@/components/brand";
 
 const QUICK_LINKS = [
   { href: "/", label: "الرئيسية" },
@@ -72,14 +73,8 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-4 pb-10 pt-2 sm:px-6">
         <div className="grid gap-10 border-b border-white/10 pb-10 lg:grid-cols-[1.3fr_0.7fr_0.7fr_1fr]">
           <div>
-            <Link href="/" className="flex items-center gap-2 text-white">
-              <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-primary text-white">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M4 5.5C6.5 4.2 9 4 12 5v14c-3-1-5.5-.8-8 .5V5.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/>
-                  <path d="M20 5.5C17.5 4.2 15 4 12 5v14c3-1 5.5-.8 8 .5V5.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/>
-                </svg>
-              </span>
-              <span className="text-lg font-extrabold">أكاديميا</span>
+            <Link href="/" className="inline-block transition-opacity hover:opacity-90" aria-label="فصيح — الرئيسية">
+              <BrandLogo variant="horizontal" theme="dark" className="h-10 sm:h-11 w-auto" />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed">
               {subject.footerBlurb}

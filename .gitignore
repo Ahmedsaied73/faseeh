@@ -68,3 +68,4 @@ graphify-out/
 # agent/dev tooling (keep on dev machine, never commit)
 plans/
 *.patch
+.env*

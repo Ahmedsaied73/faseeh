@@ -15,6 +15,7 @@ import { PAGE_TITLES } from '@/lib/page-titles';
 import { prewarmFingerprint } from '@/lib/fingerprint';
 import { AuthArt } from '@/components/subject/subject-art';
 import { subject } from '@/lib/subject-theme';
+import { BrandLogo } from '@/components/brand';
 
 const formSchema = z.object({
   firstName: z.string().min(2, {
@@ -152,7 +153,9 @@ export default function RegisterPage() {
 
           <div className="flex flex-1 items-center justify-center px-6 py-16">
             <div className="w-full max-w-sm">
-              <Link href="/" className="text-lg font-extrabold text-brand-primary">أكاديميا</Link>
+              <Link href="/" className="inline-block transition-opacity hover:opacity-90" aria-label="فصيح — الرئيسية">
+                <BrandLogo variant="horizontal" className="h-10 w-auto" />
+              </Link>
               <h1 className="mt-6 text-2xl font-extrabold text-brand-text">{subject.register.title}</h1>
               <p className="mt-1.5 text-sm text-brand-muted">{subject.register.subtitle}</p>
 
@@ -246,10 +249,13 @@ export default function RegisterPage() {
         <div className="relative hidden items-center justify-center overflow-hidden bg-brand-ink p-10 lg:order-1 lg:flex">
           <div className="hero-glow absolute -inset-24 rounded-full bg-brand-accent/20 blur-3xl" aria-hidden="true" />
           <div className="relative flex flex-col items-center text-center">
-            <div className="h-96 w-96">
+            <div className="h-80 w-80">
               <AuthArt variant="register" />
             </div>
-            <p className="mt-6 max-w-xs text-sm leading-relaxed text-white/70">
+            <div className="mt-4 mb-2">
+              <BrandLogo variant="horizontal" theme="dark" className="h-10 w-auto" />
+            </div>
+            <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/70">
               {subject.register.sideLine}
             </p>
           </div>

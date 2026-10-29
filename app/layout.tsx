@@ -29,7 +29,7 @@ const brandFont = localFont({
 // data-theme on <html> before stylesheets/hydration evaluate, so a stored
 // dark preference never flashes light first. NOT a useEffect — those run
 // after first paint. Default is light.
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("akademya-theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}})()`;
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("fasih-theme")||localStorage.getItem("akademya-theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}})()`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -55,8 +55,15 @@ export const metadata: Metadata = {
     description: siteConfig.tagline,
   },
   icons: {
-    icon: '/icon.svg',
+    icon: [
+      { url: '/favicon.ico', sizes: '48x48' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
   },
+  manifest: '/site.webmanifest',
   themeColor: '#4685CE',
 };
 

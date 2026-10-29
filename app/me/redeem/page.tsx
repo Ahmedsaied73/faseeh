@@ -131,7 +131,7 @@ export default function RedeemCodePage() {
   if (initialized && !enabled) {
     return (
       <>
-        <PageTitle title="تفعيل كود الكورس | أكاديميا" />
+        <PageTitle title="تفعيل كود الكورس | فصيح" />
         <div className="min-h-[calc(100vh-100px)] py-12 px-4 sm:px-6">
           <div className="mx-auto max-w-xl">
             <div className="overflow-hidden rounded-3xl border border-brand-border bg-brand-surface p-10 text-center shadow-md">
@@ -159,7 +159,7 @@ export default function RedeemCodePage() {
 
   return (
     <>
-      <PageTitle title="تفعيل كود الكورس | أكاديميا" />
+      <PageTitle title="تفعيل كود الكورس | فصيح" />
       <div className="min-h-[calc(100vh-100px)] py-12 px-4 sm:px-6">
         <div className="mx-auto max-w-xl">
           {/* Breadcrumb / Back */}
@@ -171,7 +171,7 @@ export default function RedeemCodePage() {
               <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
               العودة إلى الملف الشخصي
             </Link>
-            <span>أكاديميا للكيمياء</span>
+            <span>منصة فصيح للغة العربية</span>
           </div>
 
           <Reveal>

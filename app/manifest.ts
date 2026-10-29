@@ -1,5 +1,4 @@
 import type { MetadataRoute } from 'next';
-import { siteConfig } from '@/lib/site-config';
 
 /**
  * Web App Manifest — served by Next.js at /manifest.webmanifest.
@@ -8,18 +7,34 @@ import { siteConfig } from '@/lib/site-config';
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${siteConfig.teacherName} — ${siteConfig.subjectName}`,
-    short_name: siteConfig.subjectName,
-    description: siteConfig.tagline,
+    name: 'فصيح',
+    short_name: 'فصيح',
+    description: 'اللغة العربية للثانوية العامة',
     start_url: '/',
     display: 'standalone',
-    background_color: '#f4f6f8',
+    background_color: '#F4F6F8',
     theme_color: '#4685CE',
     lang: 'ar',
     dir: 'rtl',
     icons: [
       {
-        src: '/icon.svg',
+        src: '/icon-192.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        src: '/icon-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+      },
+      {
+        src: '/icon-512-maskable.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/favicon.svg',
         sizes: 'any',
         type: 'image/svg+xml',
       },

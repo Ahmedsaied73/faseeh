@@ -520,7 +520,7 @@ export default function AdminCoursesPage() {
               <Input
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                placeholder="مثال: أساسيات الكيمياء العضوية"
+                placeholder="مثال: أساسيات النحو والصرف"
                 required
                 className="mt-1 bg-brand-bg border-brand-border"
               />
@@ -546,7 +546,7 @@ export default function AdminCoursesPage() {
               <Input
                 value={form.category}
                 onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                placeholder="مثال: كيمياء"
+                placeholder="مثال: لغة عربية"
                 className="mt-1 bg-brand-bg border-brand-border"
               />
             </div>

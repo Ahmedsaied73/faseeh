@@ -10,6 +10,7 @@ import { selectIsAuthenticated, selectUser, selectIsAdmin, logout } from "@/stor
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { subject } from "@/lib/subject-theme";
+import { BrandLogo } from "@/components/brand";
 
 const NAV_LINKS = [
   { href: "/", label: "الرئيسية" },
@@ -86,21 +87,8 @@ export function Navbar() {
         <div className="relative z-10 flex h-16 items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6" dir="rtl">
 
         {/* ── Logo ── */}
-        <Link href="/" className="flex items-center gap-2.5 text-brand-primary shrink-0" aria-label="أكاديميا — الرئيسية">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-primary text-white shadow-sm sm:h-10 sm:w-10">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 5.5C6.5 4.2 9 4 12 5v14c-3-1-5.5-.8-8 .5V5.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/>
-              <path d="M20 5.5C17.5 4.2 15 4 12 5v14c3-1 5.5-.8 8 .5V5.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/>
-            </svg>
-          </span>
-          <span className="flex flex-col leading-tight">
-            <span className="text-base font-extrabold text-brand-primary sm:text-lg">
-              أكاديميا
-            </span>
-            <span className="text-[10px] font-medium text-brand-muted hidden sm:block">
-              {subject.brandTagline}
-            </span>
-          </span>
+        <Link href="/" className="flex items-center shrink-0 transition-opacity hover:opacity-90" aria-label="فصيح — الرئيسية">
+          <BrandLogo variant="horizontal" className="h-9 w-auto sm:h-10" />
         </Link>
 
         {/* ── Desktop Nav (authenticated only) ── */}
