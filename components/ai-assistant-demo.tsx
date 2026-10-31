@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { subject } from '@/lib/subject-theme';
 import { aiStudentService } from '@/services/aiStudentService';
+import { AuthError } from '@/lib/errors';
 
 type Entry =
   | { role: 'student' | 'assistant'; text: string }
@@ -55,7 +56,7 @@ export function AiAssistantDemo() {
       setLog((l) => [...l, { role: 'assistant', text: res.reply }]);
     } catch (err: unknown) {
       const status = (err as { status?: number })?.status;
-      if (status === 401) {
+      if (status === 401 || err instanceof AuthError) {
         setLog((l) => [
           ...l,
           { role: 'auth_required', text: 'سجّل دخول الأول عشان تكلم المساعد' },

@@ -54,6 +54,8 @@ interface RequestOptions {
   formData?: FormData;
   /** Return response as Blob instead of parsing JSON */
   responseType?: 'json' | 'blob';
+  /** Skip automatic window.location.replace('/login') on 401 */
+  skipAuthRedirect?: boolean;
 }
 
 function buildHeaders(): Record<string, string> {
@@ -211,7 +213,7 @@ async function request<T>(
     if (typeof window !== 'undefined') {
       document.cookie = 'isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       // Redirect to login if unauthenticated on protected action
-      if (!isRefreshPath && !path.includes('/auth/login')) {
+      if (!isRefreshPath && !path.includes('/auth/login') && !options.skipAuthRedirect) {
         window.location.replace('/login');
       }
     }

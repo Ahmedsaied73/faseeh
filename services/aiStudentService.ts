@@ -22,6 +22,8 @@ export const aiStudentService = {
    * Requires authentication (throws AuthError / 401 if unauthenticated).
    */
   async sendMessage(data: AiStudentChatRequest): Promise<AiStudentChatResponse> {
-    return apiClient.post<AiStudentChatResponse>('/ai-student/chat', data);
+    return apiClient.post<AiStudentChatResponse>('/ai-student/chat', data, {
+      skipAuthRedirect: true,
+    });
   },
 };
