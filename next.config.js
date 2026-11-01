@@ -119,6 +119,10 @@ const nextConfig = {
         source: '/manifest.webmanifest',
         destination: '/site.webmanifest',
       },
+      {
+        source: '/api-backend/:path*',
+        destination: 'https://sage-centaur-3a2305.netlify.app/:path*',
+      },
     ];
   },
 };
