@@ -515,3 +515,39 @@
   .stage-spin, .stage-spin-rev, .stage-drift, .stage-in, .stage-draw, .stage-glow { animation: none; }
   .stage-draw { stroke-dashoffset: 0; }
 }
+
+/* ---- Auth backdrop (login / register white side) ----
+   Append to the global stylesheet. Transform / opacity / stroke-dashoffset only. */
+@keyframes bk-trace {
+  0% { stroke-dashoffset: 1; }
+  35%, 70% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -1; }
+}
+@keyframes bk-drift {
+  0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+  50% { transform: translateY(-12px) rotate(calc(var(--rot, 0deg) + 4deg)); }
+}
+@keyframes bk-blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(26px, -22px) scale(1.08); }
+}
+.bk-mark { opacity: 0.2; animation: bk-drift 11s ease-in-out infinite; }
+.bk-trace { stroke-dasharray: 1; animation: bk-trace 9s ease-in-out infinite; }
+.bk-blob { animation: bk-blob 18s ease-in-out infinite; }
+.bk-fade {
+  -webkit-mask-image: radial-gradient(ellipse 46% 42% at 50% 52%, transparent 0%, transparent 55%, #000 100%);
+  mask-image: radial-gradient(ellipse 46% 42% at 50% 52%, transparent 0%, transparent 55%, #000 100%);
+}
+.bk-lattice {
+  background-color: var(--color-brand-muted-strong);
+  opacity: 0.12;
+  -webkit-mask-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cg fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round'%3E%3Cpath d='M23 14 L21.5 42'/%3E%3Cpath d='M33 14 L31.5 42'/%3E%3Cpath d='M14 23 L42 22.4'/%3E%3Cpath d='M14 33.4 L42 32.8'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cg fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round'%3E%3Cpath d='M23 14 L21.5 42'/%3E%3Cpath d='M33 14 L31.5 42'/%3E%3Cpath d='M14 23 L42 22.4'/%3E%3Cpath d='M14 33.4 L42 32.8'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-size: 56px 56px;
+  mask-size: 56px 56px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bk-mark, .bk-trace, .bk-blob { animation: none; }
+  .bk-trace { stroke-dashoffset: 0; }
+  .bk-mark { transform: rotate(var(--rot, 0deg)); }
+}

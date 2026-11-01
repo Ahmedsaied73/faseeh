@@ -16,6 +16,7 @@ import { PAGE_TITLES } from '@/lib/page-titles';
 import { prewarmFingerprint } from '@/lib/fingerprint';
 import { DeviceLimitModal } from '@/components/auth/DeviceLimitModal';
 import { AuthArt } from '@/components/subject/subject-art';
+import { AuthBackdrop } from '@/components/subject/auth-backdrop';
 import { subject } from '@/lib/subject-theme';
 import { BrandLogo } from '@/components/brand';
 
@@ -159,12 +160,13 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="flex flex-col">
+        <div className="relative flex flex-col">
+          <AuthBackdrop />
           <div className="relative h-36 overflow-hidden bg-brand-ink lg:hidden">
             <AuthArt variant="login" compact />
           </div>
 
-          <div className="flex flex-1 items-center justify-center px-6 py-16">
+          <div className="relative z-10 flex flex-1 items-center justify-center px-6 py-16">
             <div className="w-full max-w-sm">
               <Link href="/" className="inline-block transition-opacity hover:opacity-90" aria-label="فصيح — الرئيسية">
                 <BrandLogo variant="horizontal" className="h-10 w-auto" />
