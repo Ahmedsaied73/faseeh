@@ -8,7 +8,7 @@ import type { Components } from 'react-markdown';
 
 import { useAgentSocket } from '@/hooks/useAgentSocket';
 import { AgentConversationsBar } from '@/components/admin/AgentConversationsBar';
-import { listAgentConversations, getAgentMessages } from '@/services/agentService';
+import { listAgentConversations, getAgentMessages, askAgentQuestion, decideAgentApproval } from '@/services/agentService';
 import { MessageSquare } from 'lucide-react';
 import type { AgentConnectionStatus, AgentConversation, AgentSocketError, AgentSocketErrorCode } from '@/types/agent';
 
@@ -364,23 +364,71 @@ export function AgentChat({ compact = false, onStatusChange }: AgentChatProps = 
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [log, thinking, progress]);
 
-  function send(text: string, approvalId?: number) {
+  async function send(text: string, approvalId?: number) {
     const msg = text.trim();
     if (!msg || thinking) return;
-    // Refused (not buffered) while offline, so nothing is echoed that never left.
-    if (!sendMessage({ question: msg, conversationId, approvalId })) return;
     lastUserQuestion.current = msg;
-    // The auto-resend replays the admin's own request to SPEND an approval, so it
-    // is not echoed as a second bubble — the thread should read as one request.
     if (approvalId === undefined) push({ role: 'admin', text: msg });
     setInput('');
     setThinking(true);
     setProgress(null);
+
+    const sent = sendMessage({ question: msg, conversationId, approvalId });
+    if (!sent) {
+      setProgress('جارٍ التفكير والإجابة…');
+      try {
+        const result = await askAgentQuestion({ question: msg, conversationId, approvalId });
+        endTurn();
+        if (result.ok) {
+          setConversationId(result.conversationId);
+          if (result.answer && result.answer.trim()) push({ role: 'agent', text: result.answer });
+          if (!compact) {
+            void fetchConversationsList();
+          }
+          const requested = result.detail && 'approvalRequested' in result.detail ? result.detail.approvalRequested : null;
+          if (requested) {
+            push({
+              role: 'agent',
+              text: 'محتاج موافقتك قبل ما أنفّذ الإجراء ده.',
+              approval: {
+                approvalId: requested.approvalId,
+                toolName: requested.toolName,
+                expiresAt: requested.expiresAt,
+                decided: null,
+                question: lastUserQuestion.current,
+              },
+            });
+          }
+        } else {
+          if (typeof result.conversationId === 'number') setConversationId(result.conversationId);
+          push({ role: 'agent', text: (result as any).message || 'حدث خطأ في المساعد.', tone: 'error' });
+        }
+      } catch (err: any) {
+        endTurn();
+        push({ role: 'agent', text: err?.message || 'تعذّر الاتصال بالمساعد.', tone: 'error' });
+      }
+    }
   }
 
-  function decide(approvalId: number, approved: boolean) {
+  async function decide(approvalId: number, approved: boolean) {
     if (!submitDecision(approvalId, approved)) {
-      push({ role: 'agent', text: SOCKET_ERROR_MESSAGES.HANDLER_FAILED, tone: 'error' });
+      try {
+        await decideAgentApproval(approvalId, approved);
+        markDecision(approvalId, approved ? 'APPROVED' : 'REJECTED');
+        if (approved) {
+          const target = logRef.current.find(
+            (m) => m.approval && m.approval.approvalId === approvalId,
+          );
+          if (target?.approval) {
+            if (lastSpentApproval.current === approvalId) return;
+            lastSpentApproval.current = approvalId;
+            setThinking(false);
+            void send(target.approval.question, approvalId);
+          }
+        }
+      } catch {
+        push({ role: 'agent', text: SOCKET_ERROR_MESSAGES.HANDLER_FAILED, tone: 'error' });
+      }
       return;
     }
     // NOTE: approving does NOT resend from here. The backend only RECORDS the

@@ -44,6 +44,16 @@ import type {
 /** `SOCKET_PATH` in the backend's socketHandler.js. */
 const AGENT_SOCKET_PATH = "/agent-ws";
 
+const isLocalApi =
+  API_BASE_URL.startsWith("http://localhost") ||
+  API_BASE_URL.startsWith("http://127.0.0.1");
+
+// Netlify/Vercel serverless environments do not support persistent WebSockets/Socket.IO.
+// When deployed on serverless (or when explicitly requested), operate cleanly via REST.
+const isRestMode =
+  process.env.NEXT_PUBLIC_AGENT_TRANSPORT === "rest" ||
+  (!isLocalApi && process.env.NEXT_PUBLIC_AGENT_TRANSPORT !== "socket");
+
 /** Server → client. One entry per event the backend actually emits. */
 interface AgentServerEvents {
   /** Carries BOTH `{ type: 'thinking' }` and `{ type: 'tier' }` — there is no `agent:tier`. */
@@ -110,7 +120,7 @@ function toPositiveInt(value: number | null | undefined): number | null {
 
 export function useAgentSocket(options: UseAgentSocketOptions = {}): UseAgentSocketResult {
   const { enabled = true } = options;
-  const [status, setStatus] = useState<AgentConnectionStatus>("disconnected");
+  const [status, setStatus] = useState<AgentConnectionStatus>(isRestMode ? "connected" : "disconnected");
 
   // The single source of truth for the live connection, and the reason the
   // effect below can register its listeners exactly once.
@@ -135,6 +145,14 @@ export function useAgentSocket(options: UseAgentSocketOptions = {}): UseAgentSoc
   useEffect(() => {
     if (!enabled) return;
 
+    if (isRestMode) {
+      activeRef.current = true;
+      setStatusSafe("connected");
+      return () => {
+        activeRef.current = false;
+      };
+    }
+
     activeRef.current = true;
     setStatusSafe("connecting");
 
@@ -148,6 +166,9 @@ export function useAgentSocket(options: UseAgentSocketOptions = {}): UseAgentSoc
       path: AGENT_SOCKET_PATH,
       withCredentials: true,
       autoConnect: false,
+      transports: ['websocket'],
+      reconnectionAttempts: 1,
+      timeout: 3000,
     }) as AgentSocket;
     socketRef.current = socket;
 
