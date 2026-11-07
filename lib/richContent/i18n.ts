@@ -20,6 +20,26 @@ export const richMessages = {
     "rich.errorBadMath": "صيغة رياضية غير صحيحة",
     "rich.textPlaceholder": "اكتب نص الإجابة هنا...",
     "rich.equationPlaceholder": "اكتب المعادلة الرياضية...",
+    // Phase 4 - Science Keyboard
+    "rich.keyboardScience": "علوم",
+    "rich.keyboardScienceTooltip": "لوحة مفاتيح العلوم والرياضيات",
+    // Phase 4 - Chem Block
+    "rich.chemInsertArrow": "سهم تفاعل (->)",
+    "rich.chemInsertEquilibrium": "سهم اتزان (<=>)",
+    "rich.chemInsertGas": "تصاعد غاز (^)",
+    "rich.chemInsertPrecipitate": "راسب (v)",
+    "rich.chemInsertHeat": "حرارة ([\\Delta])",
+    "rich.chemInvalidFormula": "صيغة كيميائية غير صحيحة أو أقواس غير متوازنة",
+    "rich.chemPreview": "معاينة المعادلة الكيميائية",
+    // Phase 5 - Admin Authoring & RichField
+    "rich.previewAsStudent": "معاينة كما يراها الطالب",
+    "rich.editContent": "تعديل المحتوى",
+    "rich.studentPreviewBadge": "معاينة الطالب",
+    "rich.modelAnswerSecurityNote": "ملاحظة أمان: نموذج الإجابة محمي على الخادم — لن يظهر للطالب نهائياً في أي استجابة ويُستخدم فقط للتقييم والتصحيح بالذكاء الاصطناعي.",
+    "rich.answerFormatLabel": "صيغة إجابة الطالب (المعادلات الرياضية)",
+    "rich.answerFormatFollowSubject": "بحسب مادة الاختبار (تلقائي)",
+    "rich.answerFormatRich": "السماح بالمعادلات (RICH)",
+    "rich.answerFormatPlain": "نص عادي فقط (PLAIN)",
   },
   en: {
     "rich.addText": "Add text",
@@ -39,6 +59,26 @@ export const richMessages = {
     "rich.errorBadMath": "Invalid math syntax",
     "rich.textPlaceholder": "Write answer text here...",
     "rich.equationPlaceholder": "Write math equation...",
+    // Phase 4 - Science Keyboard
+    "rich.keyboardScience": "Science",
+    "rich.keyboardScienceTooltip": "Science & Math keyboard",
+    // Phase 4 - Chem Block
+    "rich.chemInsertArrow": "Reaction arrow (->)",
+    "rich.chemInsertEquilibrium": "Equilibrium arrow (<=>)",
+    "rich.chemInsertGas": "Gas release (^)",
+    "rich.chemInsertPrecipitate": "Precipitate (v)",
+    "rich.chemInsertHeat": "Heat condition ([\\Delta])",
+    "rich.chemInvalidFormula": "Invalid chemical formula or unbalanced brackets",
+    "rich.chemPreview": "Chemical equation preview",
+    // Phase 5 - Admin Authoring & RichField
+    "rich.previewAsStudent": "Preview as student",
+    "rich.editContent": "Edit content",
+    "rich.studentPreviewBadge": "Student preview",
+    "rich.modelAnswerSecurityNote": "Security Note: The reference answer is server-protected — it is never returned to students in any response and is used only for grading and AI evaluation.",
+    "rich.answerFormatLabel": "Student Answer Format (Math Equations)",
+    "rich.answerFormatFollowSubject": "Follow subject (default)",
+    "rich.answerFormatRich": "Allow equations (RICH)",
+    "rich.answerFormatPlain": "Plain text only (PLAIN)",
   },
 } as const;
 

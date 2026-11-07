@@ -10,6 +10,7 @@ import {
   RichMessageKey,
 } from "@/lib/richContent";
 import { MathBlockEditor } from "./MathBlockEditor";
+import { ChemBlockEditor } from "./ChemBlockEditor";
 import { RichView } from "./RichView";
 import {
   Plus,
@@ -112,7 +113,7 @@ export function RichEditor({
       id: createBlockId(),
       t: type,
       v: "",
-      autoFocus: type === "math",
+      autoFocus: type === "math" || type === "chem",
     };
     emitChange([...blocks, newBlock]);
   };
@@ -244,6 +245,7 @@ export function RichEditor({
                     readOnly={readOnly}
                     autoFocus={block.autoFocus}
                     ariaLabel={`${t("rich.equationLabel")} ${index + 1}`}
+                    locale={locale}
                   />
                   {block.incomplete && (
                     <div className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-500">
@@ -255,33 +257,14 @@ export function RichEditor({
               )}
 
               {block.t === "chem" && (
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    dir="ltr"
-                    disabled={readOnly}
-                    maxLength={RICH_LIMITS.maxChemChars}
-                    value={block.v}
-                    onChange={(e) => handleChemChange(block.id, e.target.value)}
-                    placeholder="e.g. CaCO3 -> CaO + CO2"
-                    aria-label={`${t("rich.chemLabel")} ${index + 1}`}
-                    autoCapitalize="off"
-                    autoCorrect="off"
-                    spellCheck="false"
-                    className="w-full rounded-md border border-border/80 bg-background px-3 py-2 text-sm font-mono outline-none focus:border-brand-primary"
-                  />
-                  {block.v.trim() && (
-                    <div className="rounded border border-dashed border-border/60 bg-muted/30 p-2">
-                      <RichView
-                        value={JSON.stringify({
-                          v: 1,
-                          blocks: [{ t: "chem", v: block.v }],
-                        })}
-                      />
-                    </div>
-                  )}
-                  <p className="text-[11px] text-muted-foreground">{t("rich.chemHint")}</p>
-                </div>
+                <ChemBlockEditor
+                  value={block.v}
+                  onChange={(chem) => handleChemChange(block.id, chem)}
+                  readOnly={readOnly}
+                  autoFocus={block.autoFocus}
+                  ariaLabel={`${t("rich.chemLabel")} ${index + 1}`}
+                  locale={locale}
+                />
               )}
             </div>
           );

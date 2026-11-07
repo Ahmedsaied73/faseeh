@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import type { MathfieldElement } from "mathlive";
-import { normalizeMathLatex, hasPlaceholder } from "@/lib/richContent";
+import { normalizeMathLatex, hasPlaceholder, registerScienceKeyboard } from "@/lib/richContent";
 
 type Props = {
   value: string;
@@ -11,6 +11,7 @@ type Props = {
   readOnly?: boolean;
   autoFocus?: boolean;
   className?: string;
+  locale?: "ar" | "en";
 };
 
 export function MathBlockEditor({
@@ -20,6 +21,7 @@ export function MathBlockEditor({
   readOnly,
   autoFocus,
   className,
+  locale = "ar",
 }: Props) {
   const ref = useRef<MathfieldElement>(null);
   const [ready, setReady] = useState(false);
@@ -33,6 +35,7 @@ export function MathBlockEditor({
         if (cancelled) return;
         MathfieldElement.fontsDirectory = "/mathlive/fonts";
         MathfieldElement.soundsDirectory = null;
+        registerScienceKeyboard(locale);
         setReady(true);
       } catch (err) {
         console.error("Failed to load MathLive:", err);
@@ -41,7 +44,7 @@ export function MathBlockEditor({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [locale]);
 
   // Field -> Parent event listener
   useEffect(() => {
