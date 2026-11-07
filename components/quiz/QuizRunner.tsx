@@ -378,8 +378,9 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
     if (q.type === "comment" || q.type === "richanswer") {
       const isRichFlag = process.env.NEXT_PUBLIC_RICH_INPUT_ENABLED !== "false";
       const rawFormat = (q.answerFormat as AnswerFormat) || (q.format as AnswerFormat) || null;
-      const effectiveFormat = resolveEffectiveFormat(rawFormat);
-      const isRich = isRichFlag && (q.type === "richanswer" || effectiveFormat === "RICH");
+      const isMathQuiz = Boolean(startData?.quiz?.title && /(?:\u0631\u064A\u0627\u0636|math|\u0641\u064A\u0632\u064A\u0627\u0621|physics|\u0643\u064A\u0645\u064A\u0627\u0621|chem)/i.test(startData.quiz.title));
+      const effectiveFormat = resolveEffectiveFormat(rawFormat, isMathQuiz ? "MATH" : undefined);
+      const isRich = isRichFlag && (q.type === "richanswer" || effectiveFormat === "RICH" || (isMathQuiz && rawFormat !== "PLAIN"));
 
       if (isRich) {
         return (

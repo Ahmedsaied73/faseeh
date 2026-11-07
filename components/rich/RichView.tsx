@@ -35,6 +35,82 @@ function MathHtml({ tex }: { tex: string }) {
   );
 }
 
+/**
+ * Renders text containing inline ($...$) or block ($$...$$) math expressions using KaTeX.
+ */
+function FormattedText({ text }: { text: string }) {
+  const elements = useMemo(() => {
+    if (!text || (!text.includes("$") && !text.includes("\\("))) {
+      return text;
+    }
+
+    // Matches $$...$$, $...$, \(...\), or \[...\]
+    const regex = /(\$\$[\s\S]*?\$\$|\$(?:\\\$|[^\$])+?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g;
+    const parts = text.split(regex);
+
+    return parts.map((part, index) => {
+      if (!part) return null;
+
+      let isBlock = false;
+      let mathCode = "";
+
+      if (part.startsWith("$$") && part.endsWith("$$")) {
+        isBlock = true;
+        mathCode = part.slice(2, -2).trim();
+      } else if (part.startsWith("\\[") && part.endsWith("\\]")) {
+        isBlock = true;
+        mathCode = part.slice(2, -2).trim();
+      } else if (part.startsWith("$") && part.endsWith("$")) {
+        isBlock = false;
+        mathCode = part.slice(1, -1).trim();
+      } else if (part.startsWith("\\(") && part.endsWith("\\)")) {
+        isBlock = false;
+        mathCode = part.slice(2, -2).trim();
+      } else {
+        return <span key={index}>{part}</span>;
+      }
+
+      try {
+        const rendered = katex.renderToString(mathCode, {
+          displayMode: isBlock,
+          throwOnError: false,
+          trust: false,
+          strict: "ignore",
+          maxExpand: 1000,
+        });
+
+        if (isBlock) {
+          return (
+            <div
+              key={index}
+              dir="ltr"
+              className="my-2 inline-block overflow-x-auto"
+              dangerouslySetInnerHTML={{ __html: rendered }}
+            />
+          );
+        }
+
+        return (
+          <span
+            key={index}
+            dir="ltr"
+            className="inline-block px-1 align-baseline"
+            dangerouslySetInnerHTML={{ __html: rendered }}
+          />
+        );
+      } catch {
+        return <code key={index} dir="ltr">{part}</code>;
+      }
+    });
+  }, [text]);
+
+  return (
+    <p dir="auto" className="whitespace-pre-wrap leading-relaxed text-foreground">
+      {elements}
+    </p>
+  );
+}
+
 export interface RichViewProps {
   value: string | null | undefined;
   className?: string;
@@ -51,11 +127,7 @@ export function RichView({ value, className = "" }: RichViewProps) {
     <div className={`rich-view space-y-2 ${className}`}>
       {blocks.map((b, i) => {
         if (b.t === "text") {
-          return (
-            <p key={i} dir="auto" className="whitespace-pre-wrap leading-relaxed text-foreground">
-              {b.v}
-            </p>
-          );
+          return <FormattedText key={i} text={b.v} />;
         }
 
         const tex = b.t === "chem" ? `\\ce{${b.v}}` : b.v;
