@@ -7,4 +7,5 @@ export * from "./normalize";
 export * from "./grader";
 export * from "./i18n";
 export * from "./scienceKeyboard";
+export * from "./strokes";
 

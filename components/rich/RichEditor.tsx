@@ -11,6 +11,7 @@ import {
 } from "@/lib/richContent";
 import { MathBlockEditor } from "./MathBlockEditor";
 import { ChemBlockEditor } from "./ChemBlockEditor";
+import { HandwritingPad } from "./HandwritingPad";
 import { RichView } from "./RichView";
 import {
   Plus,
@@ -21,6 +22,7 @@ import {
   Sigma,
   FlaskConical,
   AlertCircle,
+  PenTool,
 } from "lucide-react";
 
 export interface RichEditorProps {
@@ -63,6 +65,11 @@ export function RichEditor({
     }
     return parsed.map((b) => ({ id: createBlockId(), t: b.t, v: b.v }));
   });
+
+  const [openHandwritingId, setOpenHandwritingId] = useState<string | null>(null);
+  const isHandwritingEnabled =
+    typeof process !== "undefined" &&
+    process.env.NEXT_PUBLIC_HANDWRITING_ENABLED === "true";
 
   const lastEmittedRef = useRef<string>(value || "");
   const t = useCallback((key: RichMessageKey) => tRich(key, locale), [locale]);
@@ -190,6 +197,27 @@ export function RichEditor({
 
                 {!readOnly && (
                   <div className="flex items-center gap-1">
+                    {block.t === "math" && isHandwritingEnabled && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOpenHandwritingId((curr) =>
+                            curr === block.id ? null : block.id
+                          )
+                        }
+                        aria-label={t("rich.handwritingToggle")}
+                        className={`flex h-11 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors ${
+                          openHandwritingId === block.id
+                            ? "bg-brand-primary text-white"
+                            : "text-brand-primary hover:bg-brand-primary/10"
+                        }`}
+                      >
+                        <PenTool className="h-4 w-4" />
+                        <span className="hidden sm:inline">
+                          {t("rich.handwritingToggle")}
+                        </span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       disabled={isFirst}
@@ -237,6 +265,19 @@ export function RichEditor({
 
               {block.t === "math" && (
                 <div>
+                  {isHandwritingEnabled && openHandwritingId === block.id && (
+                    <div className="mb-3">
+                      <HandwritingPad
+                        locale={locale}
+                        readOnly={readOnly}
+                        onClose={() => setOpenHandwritingId(null)}
+                        onConvert={(latex) => {
+                          handleMathChange(block.id, latex, false);
+                          setOpenHandwritingId(null);
+                        }}
+                      />
+                    </div>
+                  )}
                   <MathBlockEditor
                     value={block.v}
                     onChange={(latex, incomplete) =>
