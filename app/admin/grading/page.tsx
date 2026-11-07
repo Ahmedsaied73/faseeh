@@ -8,6 +8,7 @@ import type { EssayResultQuestion, QuizResultData } from '@/types/quiz';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageTitle } from '@/components/page-title';
 import { adminTitle } from '@/lib/page-titles';
+import { RichView } from '@/components/rich/RichView';
 
 function formatRelativeTime(dateStr?: string | null): string {
   if (!dateStr) return '—';
@@ -34,8 +35,13 @@ export default function AdminGradingPage() {
   const [result, setResult] = useState<QuizResultData | null>(null);
   const [resultLoading, setResultLoading] = useState(false);
 
+  // Active question index in the essay questions array
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+
+  // Scores and feedback mapped by question name: { [qName]: number | string }
   const [scores, setScores] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
+
   const [approvedIds, setApprovedIds] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -74,12 +80,38 @@ export default function AdminGradingPage() {
         const data = await getAdminAttemptResult(selectedId!);
         if (!cancelled) {
           setResult(data);
+          setActiveQuestionIndex(0);
 
-          // Seed score with existing earned points or AI suggested if available
-          const essayQ = data.questions.find((q): q is EssayResultQuestion => q.type === 'comment');
-          if (essayQ && essayQ.earnedPoints != null) {
-            setScores((prev) => ({ ...prev, [selectedId!]: essayQ.earnedPoints! }));
+          // Extract all essay questions from the attempt
+          const essays = (data.questions || []).filter(
+            (q): q is EssayResultQuestion =>
+              q.type === 'comment' || (q as { type: string }).type === 'richanswer'
+          );
+
+          const initialScores: Record<string, number> = {};
+          const initialNotes: Record<string, string> = {};
+
+          for (const q of essays) {
+            const hasAnswer = Boolean(q.studentAnswer && q.studentAnswer.trim() !== '');
+
+            if (q.earnedPoints != null) {
+              initialScores[q.name] = q.earnedPoints;
+            } else if (!hasAnswer) {
+              // Unanswered question defaults to 0
+              initialScores[q.name] = 0;
+            } else {
+              // Answered question defaults to AI suggestion if present, or ~80% of max
+              const maxPts = q.maxPoints || 5;
+              initialScores[q.name] = Math.round(maxPts * 0.8);
+            }
+
+            if (q.feedback) {
+              initialNotes[q.name] = q.feedback;
+            }
           }
+
+          setScores(initialScores);
+          setNotes(initialNotes);
         }
       } catch {
         if (!cancelled) {
@@ -101,40 +133,89 @@ export default function AdminGradingPage() {
     [attempts, selectedId]
   );
 
-  const essayQuestion = useMemo(() => {
-    if (!result?.questions) return null;
-    return (result.questions.find((q) => q.type === 'comment') as EssayResultQuestion) || null;
+  // Extract all essay questions for this student attempt
+  const essayQuestions = useMemo(() => {
+    if (!result?.questions) return [];
+    return result.questions.filter(
+      (q): q is EssayResultQuestion =>
+        q.type === 'comment' || (q as { type: string }).type === 'richanswer'
+    );
   }, [result]);
 
-  const isApproved = selectedId ? approvedIds.includes(selectedId) : false;
-  const maxScore = essayQuestion?.maxPoints || 5;
+  const currentQuestion = useMemo(() => {
+    if (essayQuestions.length === 0) return null;
+    const clampedIndex = Math.min(Math.max(0, activeQuestionIndex), essayQuestions.length - 1);
+    return essayQuestions[clampedIndex] || null;
+  }, [essayQuestions, activeQuestionIndex]);
 
-  // AI suggestion calculation
+  const isApproved = selectedId ? approvedIds.includes(selectedId) : false;
+  const maxScore = currentQuestion?.maxPoints || 5;
+
+  const hasStudentAnswer = Boolean(
+    currentQuestion?.studentAnswer && currentQuestion.studentAnswer.trim() !== ''
+  );
+
+  // AI suggestion calculation for active question
   const aiSuggested =
-    essayQuestion?.earnedPoints != null
-      ? essayQuestion.earnedPoints
-      : Math.round(maxScore * 0.8);
+    currentQuestion?.earnedPoints != null
+      ? currentQuestion.earnedPoints
+      : hasStudentAnswer
+      ? Math.round(maxScore * 0.8)
+      : 0;
 
   const aiConfidence =
-    essayQuestion?.confidence && essayQuestion.confidence >= 0.8
+    currentQuestion?.confidence && currentQuestion.confidence >= 0.8
       ? 'عالية'
       : 'متوسطة';
 
-  const currentScore = selectedId != null && scores[selectedId] !== undefined
-    ? scores[selectedId]
-    : aiSuggested;
+  const currentScore =
+    currentQuestion && scores[currentQuestion.name] !== undefined
+      ? scores[currentQuestion.name]
+      : aiSuggested;
+
+  const currentNote = currentQuestion ? notes[currentQuestion.name] || '' : '';
+
+  // Summary counts
+  const totalEssayMax = useMemo(() => {
+    return essayQuestions.reduce((sum, q) => sum + (q.maxPoints || 5), 0);
+  }, [essayQuestions]);
+
+  const totalEssayEarned = useMemo(() => {
+    return essayQuestions.reduce((sum, q) => sum + (scores[q.name] ?? 0), 0);
+  }, [essayQuestions, scores]);
 
   const handleApproveGrading = async () => {
-    if (!selectedId || !essayQuestion) return;
+    if (!selectedId || essayQuestions.length === 0) return;
+
+    // Validate that every essay question has a valid numeric score
+    const finalEssayScores: Record<string, number> = {};
+    const finalEssayFeedback: Record<string, string> = {};
+
+    for (let i = 0; i < essayQuestions.length; i++) {
+      const q = essayQuestions[i];
+      const val = scores[q.name];
+      const maxPts = q.maxPoints || 5;
+
+      if (val === undefined || Number.isNaN(val) || val < 0 || val > maxPts) {
+        toast.error(`يرجى تحديد درجة صحيحة (بين 0 و ${maxPts}) للسؤال رقم ${i + 1}`);
+        setActiveQuestionIndex(i);
+        return;
+      }
+
+      finalEssayScores[q.name] = val;
+      if (notes[q.name] && notes[q.name].trim()) {
+        finalEssayFeedback[q.name] = notes[q.name].trim();
+      }
+    }
 
     setSubmitting(true);
     try {
       await gradeQuizAttempt(selectedId, {
-        essayScores: { [essayQuestion.name]: currentScore },
-        essayFeedback: notes[selectedId] ? { [essayQuestion.name]: notes[selectedId] } : undefined,
+        essayScores: finalEssayScores,
+        essayFeedback: Object.keys(finalEssayFeedback).length > 0 ? finalEssayFeedback : undefined,
       });
 
-      toast.success('تم اعتماد التصحيح بنجاح.');
+      toast.success('تم اعتماد تصحيح جميع الأسئلة المقالية بنجاح.');
       setApprovedIds((prev) => [...prev, selectedId]);
 
       // Refresh attempts list
@@ -164,7 +245,7 @@ export default function AdminGradingPage() {
         <div className="mb-6">
           <h1 className="text-lg font-extrabold sm:text-xl text-brand-text">صندوق تصحيح المقالي</h1>
           <p className="mt-1 text-sm text-brand-muted">
-            {pendingCount.toLocaleString('ar-EG')} محاولة بانتظار الاعتماد — الذكاء الاصطناعي يقترح درجة أولية توفّر عليك وقت القراءة.
+            {pendingCount.toLocaleString('ar-EG')} محاولة بانتظار الاعتماد — اختر الطالب وتنقّل بين كافة إجاباته المقالية لاعتماد التصحيح بدقة.
           </p>
         </div>
 
@@ -174,9 +255,9 @@ export default function AdminGradingPage() {
           </div>
         )}
 
-        {/* 2-Column Layout matching design */}
+        {/* 2-Column Layout */}
         <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          {/* Left Column: Attempt Queue */}
+          {/* Right Column: Attempt Queue */}
           <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:block lg:space-y-2 lg:px-0 lg:pb-0">
             {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
@@ -230,7 +311,7 @@ export default function AdminGradingPage() {
             )}
           </div>
 
-          {/* Right Column: Grading Details & AI Suggestions */}
+          {/* Left Column: Grading Details & Multiple Questions Navigation */}
           <div className="rounded-2xl border border-brand-border bg-brand-surface p-4 shadow-sm sm:p-6">
             {resultLoading ? (
               <div className="space-y-4 py-8">
@@ -241,7 +322,7 @@ export default function AdminGradingPage() {
                   <Skeleton className="h-28 w-full rounded-xl bg-brand-chip" />
                 </div>
               </div>
-            ) : !selectedAttempt || !essayQuestion ? (
+            ) : !selectedAttempt || !currentQuestion ? (
               <p className="py-16 text-center text-sm text-brand-muted">
                 {attempts.length === 0
                   ? 'صندوق التصحيح فارغ حالياً — كل شيء مصحح!'
@@ -249,28 +330,120 @@ export default function AdminGradingPage() {
               </p>
             ) : (
               <>
-                <p className="text-xs font-semibold text-brand-primary">
-                  {selectedAttempt.quizTitle || 'اختبار'}
-                </p>
-                <h2 className="mt-2 text-base font-bold leading-relaxed text-brand-text">
-                  {essayQuestion.name}
-                </h2>
+                {/* Question Navigation Bar (Tabs/Pills for all essay questions) */}
+                {essayQuestions.length > 0 && (
+                  <div className="mb-5 border-b border-brand-border pb-4">
+                    <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-brand-muted">
+                        الأسئلة المقالية ({activeQuestionIndex + 1} من {essayQuestions.length}):
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          disabled={activeQuestionIndex === 0}
+                          onClick={() => setActiveQuestionIndex((i) => Math.max(0, i - 1))}
+                          className="rounded-lg border border-brand-border px-2.5 py-1 text-xs font-bold text-brand-text transition hover:bg-brand-hover disabled:opacity-30"
+                        >
+                          ← السابق
+                        </button>
+                        <button
+                          type="button"
+                          disabled={activeQuestionIndex >= essayQuestions.length - 1}
+                          onClick={() => setActiveQuestionIndex((i) => Math.min(essayQuestions.length - 1, i + 1))}
+                          className="rounded-lg border border-brand-border px-2.5 py-1 text-xs font-bold text-brand-text transition hover:bg-brand-hover disabled:opacity-30"
+                        >
+                          التالي →
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {essayQuestions.map((q, idx) => {
+                        const isActive = idx === activeQuestionIndex;
+                        const score = scores[q.name];
+                        const answered = Boolean(q.studentAnswer && q.studentAnswer.trim() !== '');
+
+                        return (
+                          <button
+                            key={q.name}
+                            type="button"
+                            onClick={() => setActiveQuestionIndex(idx)}
+                            className={
+                              'relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ' +
+                              (isActive
+                                ? 'bg-brand-primary text-white shadow-sm ring-2 ring-brand-primary/20'
+                                : 'border border-brand-border bg-brand-bg text-brand-text hover:bg-brand-hover')
+                            }
+                          >
+                            <span>سؤال {idx + 1}</span>
+                            {score !== undefined ? (
+                              <span
+                                className={
+                                  'rounded px-1.5 py-0.5 text-[10px] font-mono ' +
+                                  (isActive
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-brand-chip text-brand-text')
+                                }
+                              >
+                                {score}/{q.maxPoints || 5}
+                              </span>
+                            ) : (
+                              <span
+                                className={
+                                  'h-1.5 w-1.5 rounded-full ' +
+                                  (answered ? 'bg-amber-500' : 'bg-slate-300')
+                                }
+                              />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Question Info Header */}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs font-semibold text-brand-primary">
+                    {selectedAttempt.quizTitle || 'اختبار'} • سؤال {activeQuestionIndex + 1} من {essayQuestions.length}
+                  </p>
+                  <span className="rounded-full bg-brand-chip px-2.5 py-0.5 text-xs font-bold text-brand-muted">
+                    الدرجة القصوى: {maxScore} درجات
+                  </span>
+                </div>
+
+                {/* Question Prompt Title rendered via RichView */}
+                <div className="mt-2 text-base font-bold leading-relaxed text-brand-text">
+                  <RichView value={(currentQuestion as { title?: string }).title || currentQuestion.name} />
+                </div>
 
                 {/* Answers Comparison Cards */}
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   <div>
-                    <p className="mb-1.5 text-xs font-bold text-brand-muted">إجابة الطالب</p>
-                    <div className="min-h-[100px] rounded-lg bg-brand-bg p-3.5 text-sm leading-relaxed text-brand-text">
-                      {essayQuestion.studentAnswer || (
-                        <span className="italic text-brand-muted">لم يكتب الطالب إجابة</span>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <p className="text-xs font-bold text-brand-muted">إجابة الطالب</p>
+                      {!hasStudentAnswer && (
+                        <span className="rounded bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600">
+                          فارغ (لم يجب)
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-h-[120px] rounded-xl border border-brand-border/60 bg-brand-bg p-4 text-sm leading-relaxed text-brand-text">
+                      {hasStudentAnswer ? (
+                        <RichView value={currentQuestion.studentAnswer} />
+                      ) : (
+                        <span className="italic text-brand-muted">لم يكتب الطالب إجابة لهذا السؤال.</span>
                       )}
                     </div>
                   </div>
+
                   <div>
-                    <p className="mb-1.5 text-xs font-bold text-brand-muted">الإجابة النموذجية</p>
-                    <div className="min-h-[100px] rounded-lg border border-brand-border p-3.5 text-sm leading-relaxed text-brand-muted-strong">
-                      {essayQuestion.modelAnswer || (
-                        <span className="italic text-brand-muted">لا توجد إجابة نموذجية مسجلة</span>
+                    <p className="mb-1.5 text-xs font-bold text-brand-muted">الإجابة النموذجية المعتمدة</p>
+                    <div className="min-h-[120px] rounded-xl border border-brand-border/60 bg-brand-bg/50 p-4 text-sm leading-relaxed text-brand-text">
+                      {currentQuestion.modelAnswer ? (
+                        <RichView value={currentQuestion.modelAnswer} />
+                      ) : (
+                        <span className="italic text-brand-muted">لا توجد إجابة نموذجية مسجلة.</span>
                       )}
                     </div>
                   </div>
@@ -290,21 +463,22 @@ export default function AdminGradingPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() =>
-                      selectedId &&
-                      setScores((s) => ({ ...s, [selectedId]: aiSuggested }))
-                    }
+                    onClick={() => {
+                      if (currentQuestion) {
+                        setScores((s) => ({ ...s, [currentQuestion.name]: aiSuggested }));
+                      }
+                    }}
                     className="rounded-full border border-brand-secondary px-3.5 py-1.5 text-xs font-bold text-brand-secondary transition hover:bg-brand-secondary/10"
                   >
-                    قبول الاقتراح
+                    قبول الاقتراح ({aiSuggested}/{maxScore})
                   </button>
                 </div>
 
                 {/* Score & Notes Form */}
-                <div className="mt-5 flex flex-wrap items-end gap-4">
+                <div className="mt-5 flex flex-wrap items-end gap-4 rounded-xl border border-brand-border bg-brand-surface p-4">
                   <div>
                     <label className="mb-1.5 block text-xs font-bold text-brand-text">
-                      الدرجة النهائية
+                      درجة السؤال {activeQuestionIndex + 1}
                     </label>
                     <div className="flex items-center gap-1.5">
                       <input
@@ -314,52 +488,85 @@ export default function AdminGradingPage() {
                         value={currentScore}
                         onChange={(e) => {
                           const val = Number(e.target.value);
-                          if (selectedId) {
-                            setScores((s) => ({ ...s, [selectedId]: Math.min(maxScore, Math.max(0, val)) }));
+                          if (currentQuestion) {
+                            setScores((s) => ({
+                              ...s,
+                              [currentQuestion.name]: Math.min(maxScore, Math.max(0, val)),
+                            }));
                           }
                         }}
-                        className="w-20 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-center text-sm font-bold text-brand-text outline-none focus:border-brand-primary"
+                        className="w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-center text-sm font-bold text-brand-text outline-none focus:border-brand-primary"
                       />
-                      <span className="text-sm text-brand-muted">/ {maxScore}</span>
+                      <span className="text-sm font-semibold text-brand-muted">/ {maxScore}</span>
                     </div>
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <label className="mb-1.5 block text-xs font-bold text-brand-text">
-                      ملاحظات للطالب (اختياري)
+                      ملاحظات وتوجيهات الطالب لهذا السؤال (اختياري)
                     </label>
                     <input
-                      value={(selectedId && notes[selectedId]) || ''}
+                      value={currentNote}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (selectedId) {
-                          setNotes((n) => ({ ...n, [selectedId]: val }));
+                        if (currentQuestion) {
+                          setNotes((n) => ({ ...n, [currentQuestion.name]: val }));
                         }
                       }}
-                      placeholder="مثال: أحسنت الشرح، راجع الفرق بين الرابطة σ وπ"
+                      placeholder="مثال: أحسنت، راجع خطوات الاشتقاق أو إشارة الحد الأخير"
                       className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-sm text-brand-text outline-none focus:border-brand-primary"
                     />
                   </div>
                 </div>
 
-                {/* Approve Button */}
-                <button
-                  type="button"
-                  onClick={handleApproveGrading}
-                  disabled={isApproved || submitting}
-                  className={
-                    'mt-5 w-full rounded-full px-6 py-2.5 text-sm font-bold transition sm:w-auto ' +
-                    (isApproved
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-brand-primary text-white hover:bg-brand-primary/90 disabled:opacity-50')
-                  }
-                >
-                  {submitting
-                    ? 'جارٍ الاعتماد...'
-                    : isApproved
-                    ? 'تم اعتماد التصحيح ✓'
-                    : 'اعتماد التصحيح'}
-                </button>
+                {/* Bottom Action & Submit Bar */}
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-brand-border pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-brand-chip px-3 py-1.5 text-xs font-bold text-brand-text">
+                      إجمالي درجات المقالي:{' '}
+                      <span className="font-extrabold text-brand-primary font-mono">
+                        {totalEssayEarned} / {totalEssayMax}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={activeQuestionIndex === 0}
+                        onClick={() => setActiveQuestionIndex((i) => Math.max(0, i - 1))}
+                        className="rounded-lg border border-brand-border px-3 py-1.5 text-xs font-bold text-brand-text transition hover:bg-brand-hover disabled:opacity-40"
+                      >
+                        ← السؤال السابق
+                      </button>
+                      <button
+                        type="button"
+                        disabled={activeQuestionIndex >= essayQuestions.length - 1}
+                        onClick={() => setActiveQuestionIndex((i) => Math.min(essayQuestions.length - 1, i + 1))}
+                        className="rounded-lg border border-brand-border px-3 py-1.5 text-xs font-bold text-brand-text transition hover:bg-brand-hover disabled:opacity-40"
+                      >
+                        السؤال التالي →
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleApproveGrading}
+                    disabled={isApproved || submitting}
+                    className={
+                      'w-full rounded-full px-6 py-2.5 text-sm font-bold shadow-sm transition sm:w-auto ' +
+                      (isApproved
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-brand-primary text-white hover:bg-brand-primary/90 disabled:opacity-50')
+                    }
+                  >
+                    {submitting
+                      ? 'جارٍ اعتماد درجات كافة الأسئلة...'
+                      : isApproved
+                      ? 'تم اعتماد التصحيح بنجاح ✓'
+                      : `اعتماد تصحيح الـ ${essayQuestions.length} أسئلة وإنهاء المحاولة`}
+                  </button>
+                </div>
               </>
             )}
           </div>
