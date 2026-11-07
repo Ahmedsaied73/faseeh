@@ -69,3 +69,6 @@ graphify-out/
 plans/
 *.patch
 .env*
+
+# Local Netlify folder
+.netlify
