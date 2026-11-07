@@ -3,6 +3,13 @@ import katex from "katex";
 import "katex/contrib/mhchem";
 import { parseRich } from "@/lib/richContent";
 
+const KATEX_MACROS = {
+  "\\displaylines": "\\begin{gathered}#1\\end{gathered}",
+  "\\differentialD": "\\mathrm{d}",
+  "\\exponentialE": "\\mathrm{e}",
+  "\\imaginaryI": "\\mathrm{i}",
+};
+
 function MathHtml({ tex }: { tex: string }) {
   const html = useMemo(() => {
     try {
@@ -12,11 +19,13 @@ function MathHtml({ tex }: { tex: string }) {
         trust: false,
         strict: "ignore",
         maxExpand: 1000,
+        macros: KATEX_MACROS,
       });
     } catch {
       return null;
     }
   }, [tex]);
+
 
   if (!html) {
     return (
@@ -77,7 +86,9 @@ function FormattedText({ text }: { text: string }) {
           trust: false,
           strict: "ignore",
           maxExpand: 1000,
+          macros: KATEX_MACROS,
         });
+
 
         if (isBlock) {
           return (
