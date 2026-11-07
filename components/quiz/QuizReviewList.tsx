@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ResultQuestion, McqResultQuestion, EssayResultQuestion, AttemptSummary } from "@/types/quiz";
 import { CheckCircle, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { RichView } from "@/components/rich/RichView";
 
 interface QuizReviewListProps {
   questions: ResultQuestion[];
@@ -12,7 +13,7 @@ interface QuizReviewListProps {
 type FilterMode = "all" | "wrong" | "correct";
 
 function isEssay(q: ResultQuestion): q is EssayResultQuestion {
-  return q.type === "comment";
+  return q.type === "comment" || (q as { type: string }).type === "richanswer";
 }
 
 function isMcq(q: ResultQuestion): q is McqResultQuestion {
@@ -123,13 +124,19 @@ function EssayCard({ q, index }: { q: EssayResultQuestion; index: number }) {
       </div>
 
       <div className="space-y-5 px-6 pb-6 sm:px-7 sm:pb-7">
-        <h2 className="text-base font-bold leading-relaxed text-brand-text">{q.name}</h2>
+        <div className="text-base font-bold leading-relaxed text-brand-text">
+          <RichView value={q.name} />
+        </div>
 
         {/* Student answer */}
         <div>
           <h3 className="mb-2 text-xs font-bold text-brand-muted">إجابتك</h3>
-          <div className="whitespace-pre-wrap rounded-xl border border-brand-border bg-brand-bg p-4 text-sm leading-relaxed text-brand-muted-strong">
-            {q.studentAnswer || <span className="italic text-brand-muted">لم تتم الإجابة</span>}
+          <div className="rounded-xl border border-brand-border bg-brand-bg p-4 text-sm leading-relaxed text-brand-muted-strong">
+            {q.studentAnswer ? (
+              <RichView value={q.studentAnswer} />
+            ) : (
+              <span className="italic text-brand-muted">لم تتم الإجابة</span>
+            )}
           </div>
         </div>
 
@@ -137,8 +144,8 @@ function EssayCard({ q, index }: { q: EssayResultQuestion; index: number }) {
         {isGraded && q.modelAnswer && (
           <div>
             <h3 className="mb-2 text-xs font-bold text-brand-primary">الإجابة النموذجية</h3>
-            <div className="whitespace-pre-wrap rounded-xl border border-brand-primary/20 bg-brand-primary/5 p-4 text-sm leading-relaxed text-brand-muted-strong">
-              {q.modelAnswer}
+            <div className="rounded-xl border border-brand-primary/20 bg-brand-primary/5 p-4 text-sm leading-relaxed text-brand-muted-strong">
+              <RichView value={q.modelAnswer} />
             </div>
           </div>
         )}
@@ -147,7 +154,7 @@ function EssayCard({ q, index }: { q: EssayResultQuestion; index: number }) {
         {isGraded && q.feedback && (
           <div className="border-s-2 border-brand-secondary/50 ps-4 text-sm leading-relaxed text-brand-muted-strong">
             <p className="mb-1 text-xs font-bold text-brand-secondary">تغذية راجعة من المصحح</p>
-            {q.feedback}
+            <RichView value={q.feedback} />
           </div>
         )}
       </div>
