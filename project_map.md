@@ -310,3 +310,29 @@ These cannot be resolved frontend-only:
 | `quizService.saveQuizResponses` | `PATCH /quizzes/attempts/:id/save` | `src/routes/quizRoutes.js` | Autosave |
 | `assignmentService.fetchAssignmentsByVideo` | `GET /assignments/video/:videoId` | `src/routes/assignmentRoutes.js` | **⚠️ Legacy Video only** |
 | `assignmentService.submitAssignment` | `POST /assignments/submit` | `src/routes/assignmentRoutes.js` | MCQ auto-graded, text is PENDING |
+
+
+---
+
+## Rich Math & Chemistry Answer System (Feature Addition)
+
+### Architecture & Key Components
+- **Components**:
+  - `components/rich/RichEditor.tsx`: Multi-block editor supporting text, math, and chem blocks.
+  - `components/rich/MathBlockEditor.tsx`: MathLive web component integration with dynamic client-side loading.
+  - `components/rich/ChemBlockEditor.tsx`: Chemical reaction formula input with live `mhchem` KaTeX rendering.
+  - `components/rich/RichView.tsx`: Universal read-only renderer converting plain strings, LaTeX, or serialized envelopes into KaTeX HTML.
+  - `components/rich/RichField.tsx`: Teacher/admin authoring wrapper with live student preview toggle.
+  - `components/rich/HandwritingPad.tsx`: Stylus/touch canvas shell (flagged off).
+- **Core Library (`lib/richContent/`)**:
+  - `types.ts`: `RichBlock`, `RichContent`, `RICH_LIMITS` (60 blocks, 20,000 max total chars).
+  - `parse.ts`: `parseRich()` parser detecting v1 JSON envelopes or plain text fallback.
+  - `serialize.ts`: `serializeRich()` converting blocks into JSON envelope strings or plain text.
+  - `normalize.ts`: `normalizeMathLatex()` normalizing MathLive macros for KaTeX compatibility.
+  - `grader.ts`: `toGraderText()` stripping markup to produce AI grader prompts.
+  - `scienceKeyboard.ts`: Virtual keyboard layout for mathematical and scientific symbols.
+  - `subjectProfile.ts`: 10-cell matrix resolving subject defaults (`MATH`, `PHYSICS`, `CHEMISTRY` -> `RICH`; `ARABIC`, `ENGLISH` -> `PLAIN`).
+- **SurveyJS Integration**:
+  - Registered custom question type `richanswer` in `QuizRunner.tsx`.
+- **Assets**:
+  - Self-hosted MathLive `.woff2` font files in `public/mathlive/fonts/` (zero external CDN dependency).
