@@ -12,6 +12,11 @@ import { ApiError } from "@/lib/errors";
 import type { StartQuizData } from "@/types/quiz";
 import { Flag, Loader2, AlertTriangle } from "lucide-react";
 import DOMPurify from 'dompurify';
+import { RichEditor } from "@/components/rich/RichEditor";
+import { RichView } from "@/components/rich/RichView";
+import { resolveEffectiveFormat, subjectProfile, type AnswerFormat } from "@/lib/subjectProfile";
+import { isEmptyRich } from "@/lib/richContent";
+import { registerRichAnswer } from "@/components/rich/survey/richanswer";
 
 // --- Types from SurveyJS surveyJson shape ---
 interface SurveyElement {
@@ -159,6 +164,7 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
 
   useEffect(() => {
     setIsHydrated(true);
+    registerRichAnswer();
   }, []);
 
   // Keep a live ref of the latest answers for the keepalive leave-submit.
@@ -298,7 +304,9 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
     const q = questions[idx];
     if (!q) return false;
     const v = answers[q.name];
-    return v !== undefined && v !== null && v !== "";
+    if (v === undefined || v === null || v === "") return false;
+    if (typeof v === "string" && isEmptyRich(v)) return false;
+    return true;
   };
 
   // Question navigator button state
@@ -367,7 +375,28 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
       );
     }
 
-    if (q.type === "comment") {
+    if (q.type === "comment" || q.type === "richanswer") {
+      const isRichFlag = process.env.NEXT_PUBLIC_RICH_INPUT_ENABLED !== "false";
+      const rawFormat = (q.answerFormat as AnswerFormat) || (q.format as AnswerFormat) || null;
+      const effectiveFormat = resolveEffectiveFormat(rawFormat);
+      const isRich = isRichFlag && (q.type === "richanswer" || effectiveFormat === "RICH");
+
+      if (isRich) {
+        return (
+          <>
+            {attachedImageNode}
+            <div className="mt-6">
+              <RichEditor
+                value={(answers[q.name] as string) ?? ""}
+                onChange={(val) => setAnswer(q.name, val)}
+                ariaLabel={q.title || "إجابة مقالية"}
+                allowChem={subjectProfile().allowChem}
+              />
+            </div>
+          </>
+        );
+      }
+
       return (
         <>
           {attachedImageNode}
@@ -501,7 +530,9 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
             </button>
           </div>
           {currentQ.title && (
-            <h2 className="mt-2 text-lg font-bold leading-relaxed text-brand-text">{currentQ.title}</h2>
+            <div className="mt-2 text-lg font-bold leading-relaxed text-brand-text">
+              <RichView value={currentQ.title} />
+            </div>
           )}
 
           {renderQuestion(currentQ)}

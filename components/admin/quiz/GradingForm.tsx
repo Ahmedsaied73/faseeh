@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { gradeQuizAttempt } from "@/services/adminQuizService";
 import type { GradeAttemptInput, QuizResultData } from "@/types/quiz";
+import { RichView } from "@/components/rich/RichView";
 
 interface GradingFormProps {
   attempt: { id: number; attemptNumber: number };
@@ -21,8 +22,8 @@ function errorMessage(error: unknown): string {
 
 function isEssayQuestion(
   question: QuizResultData["questions"][number],
-): question is Extract<QuizResultData["questions"][number], { type: "comment" }> {
-  return question.type === "comment";
+): question is Extract<QuizResultData["questions"][number], { type: "comment" | "richanswer" }> {
+  return question.type === "comment" || (question as { type: string }).type === "richanswer";
 }
 
 export default function GradingForm({ attempt, result, onGraded }: GradingFormProps) {
@@ -74,18 +75,28 @@ export default function GradingForm({ attempt, result, onGraded }: GradingFormPr
         </p>
       ) : essayQuestions.map((question) => (
         <div key={question.name} className="rounded-xl border border-outline-variant/50 bg-surface p-4">
-          <p className="font-bold text-on-surface">
-            {question.name}
+          <div className="font-bold text-on-surface">
+            <RichView value={question.name} />
             {question.gradedBy === "ai" && (
-              <span className="mr-2 rounded-full border border-primary-color/30 bg-[#e8f2ff]/60 px-2 py-0.5 text-[11px] font-bold text-[#0057c0]">
+              <span className="mr-2 inline-block rounded-full border border-primary-color/30 bg-[#e8f2ff]/60 px-2 py-0.5 text-[11px] font-bold text-[#0057c0]">
                 🤖 تلقائي{typeof question.confidence === "number" ? ` (الثقة ${Math.round(question.confidence * 100)}%)` : ""}
               </span>
             )}
-          </p>
-          <p className="mt-2 whitespace-pre-wrap rounded-lg bg-surface-container-low p-3 text-sm text-on-surface-variant">
-            إجابة الطالب: {question.studentAnswer || "لم تتم الإجابة"}
-          </p>
-          <p className="mt-2 text-sm text-on-surface-variant/70">الإجابة النموذجية: {question.modelAnswer}</p>
+          </div>
+          <div className="mt-2 rounded-lg bg-surface-container-low p-3 text-sm text-on-surface-variant">
+            <span className="font-semibold block mb-1">إجابة الطالب:</span>
+            {question.studentAnswer ? (
+              <RichView value={question.studentAnswer} />
+            ) : (
+              <span className="italic">لم تتم الإجابة</span>
+            )}
+          </div>
+          {question.modelAnswer && (
+            <div className="mt-2 rounded-lg border border-primary-color/20 bg-primary-color/5 p-3 text-sm text-on-surface-variant">
+              <span className="font-semibold block mb-1 text-primary-color">الإجابة النموذجية:</span>
+              <RichView value={question.modelAnswer} />
+            </div>
+          )}
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-semibold text-on-surface/80">
               الدرجة (الحد الأقصى {question.maxPoints})

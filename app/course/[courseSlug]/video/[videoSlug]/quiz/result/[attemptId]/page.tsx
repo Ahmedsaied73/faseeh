@@ -114,7 +114,7 @@ export default function QuizResultPage({ params }: PageProps) {
             earnedPoints: result.earnedPoints,
             totalPoints: result.totalPoints,
             scorePercent: result.scorePercent,
-            hasEssays: result.questions.some(q => q.type === "comment"),
+            hasEssays: result.questions.some(q => q.type === "comment" || (q as { type: string }).type === "richanswer"),
             perQuestion: []
           }}
           attemptId={result.attemptId}

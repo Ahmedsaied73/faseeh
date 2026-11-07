@@ -154,7 +154,7 @@ export interface McqResultQuestion {
 
 export interface EssayResultQuestion {
   name: string;
-  type: 'comment';
+  type: 'comment' | 'richanswer';
   studentAnswer: string | null;
   /** Null until the attempt is graded (hide-until-pass). */
   modelAnswer: string | null;
