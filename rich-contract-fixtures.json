@@ -1,0 +1,145 @@
+{
+  "plain": [
+    "",
+    "Simple English sentence explaining Newton's second law.",
+    "فقرة باللغة العربية لشرح قانون نيوتن الثاني مع أرقام ١٢٣٤٥.",
+    "Text with $dollar$ signs and \\backslashes\\ that are not math.",
+    "{\"message\":\"This looks like JSON but does not start with the envelope prefix\"}",
+    "سؤال مقالي عادي بدون أي معادلات رياضية أو رموز كيميائية.",
+    "Line 1\nLine 2\nLine 3"
+  ],
+  "rich": [
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"\\\\frac{a+b}{c}\"}]}",
+      "blocks": [
+        { "t": "math", "v": "\\frac{a+b}{c}" }
+      ]
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"\\\\frac{1}{2}\"}]}",
+      "blocks": [
+        { "t": "math", "v": "\\frac{1}{2}" }
+      ]
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"x_{1,2}=\\\\frac{-b\\\\pm\\\\sqrt{b^{2}-4ac}}{2a}\"}]}",
+      "blocks": [
+        { "t": "math", "v": "x_{1,2}=\\frac{-b\\pm\\sqrt{b^{2}-4ac}}{2a}" }
+      ]
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"text\",\"v\":\"باستخدام قانون نيوتن الثاني:\"},{\"t\":\"math\",\"v\":\"\\\\vec{F}=m\\\\vec{a}\"}]}",
+      "blocks": [
+        { "t": "text", "v": "باستخدام قانون نيوتن الثاني:" },
+        { "t": "math", "v": "\\vec{F}=m\\vec{a}" }
+      ]
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"text\",\"v\":\"Step 1: Calculate velocity\"},{\"t\":\"math\",\"v\":\"v=v_{0}+at\"},{\"t\":\"text\",\"v\":\"Step 2: Distance travelled\"},{\"t\":\"math\",\"v\":\"\\\\Delta x=v_{0}t+\\\\frac{1}{2}at^{2}\"}]}",
+      "blocks": [
+        { "t": "text", "v": "Step 1: Calculate velocity" },
+        { "t": "math", "v": "v=v_{0}+at" },
+        { "t": "text", "v": "Step 2: Distance travelled" },
+        { "t": "math", "v": "\\Delta x=v_{0}t+\\frac{1}{2}at^{2}" }
+      ]
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"chem\",\"v\":\"2H2 + O2 -> 2H2O\"}]}",
+      "blocks": [
+        { "t": "chem", "v": "2H2 + O2 -> 2H2O" }
+      ]
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"chem\",\"v\":\"N2 + 3H2 <=> 2NH3\"}]}",
+      "blocks": [
+        { "t": "chem", "v": "N2 + 3H2 <=> 2NH3" }
+      ]
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"س^{2}+ص^{2}=٢٥\"}]}",
+      "blocks": [
+        { "t": "math", "v": "س^{2}+ص^{2}=٢٥" }
+      ]
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"\\\\text{ثابت}=5\"}]}",
+      "blocks": [
+        { "t": "math", "v": "\\text{ثابت}=5" }
+      ]
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"text\",\"v\":\"تفاعل تفكك كربونات الكالسيوم بالحرارة:\"},{\"t\":\"chem\",\"v\":\"CaCO3 ->[\\\\Delta] CaO + CO2 ^\"},{\"t\":\"text\",\"v\":\"قيمة ثابت الاتزان:\"},{\"t\":\"math\",\"v\":\"K_{p}=P_{CO_{2}}\"}]}",
+      "blocks": [
+        { "t": "text", "v": "تفاعل تفكك كربونات الكالسيوم بالحرارة:" },
+        { "t": "chem", "v": "CaCO3 ->[\\Delta] CaO + CO2 ^" },
+        { "t": "text", "v": "قيمة ثابت الاتزان:" },
+        { "t": "math", "v": "K_{p}=P_{CO_{2}}" }
+      ]
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"\\\\int_{0}^{1}x^{2}\\\\,dx\"},{\"t\":\"math\",\"v\":\"\\\\begin{pmatrix}1&2\\\\\\\\3&4\\\\end{pmatrix}\"}]}",
+      "blocks": [
+        { "t": "math", "v": "\\int_{0}^{1}x^{2}\\,dx" },
+        { "t": "math", "v": "\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}" }
+      ]
+    }
+  ],
+  "invalid": [
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"\\\\frac{1}{\"}]}",
+      "code": "RICH_BAD_MATH"
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"}{\"}]}",
+      "code": "RICH_BAD_MATH"
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"\\\\unknowncommand{1}\"}]}",
+      "code": "RICH_BAD_MATH"
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"\\\\href{http://example.com}{x}\"}]}",
+      "code": "RICH_FORBIDDEN_COMMAND"
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"\\\\input{/etc/passwd}\"}]}",
+      "code": "RICH_FORBIDDEN_COMMAND"
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"\\\\def\\\\a{\\\\a\\\\a}\\\\a\"}]}",
+      "code": "RICH_FORBIDDEN_COMMAND"
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"\\\\newcommand{\\\\x}{y}\\\\x\"}]}",
+      "code": "RICH_FORBIDDEN_COMMAND"
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"\\\\includegraphics{x.png}\"}]}",
+      "code": "RICH_FORBIDDEN_COMMAND"
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"math\",\"v\":\"\\\\write18{ls}\"}]}",
+      "code": "RICH_FORBIDDEN_COMMAND"
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"chem\",\"v\":\"H2O} \\\\href{x}{y\"}]}",
+      "code": "RICH_BAD_MATH"
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[",
+      "code": "RICH_BAD_FORMAT"
+    },
+    {
+      "raw": "{\"v\":2,\"blocks\":[]}",
+      "code": "RICH_BAD_FORMAT"
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[{\"t\":\"unknown_type\",\"v\":\"content\"}]}",
+      "code": "RICH_BAD_FORMAT"
+    },
+    {
+      "raw": "{\"v\":1,\"blocks\":[],\"extra\":\"invalid\"}",
+      "code": "RICH_BAD_FORMAT"
+    }
+  ]
+}
