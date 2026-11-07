@@ -69,3 +69,7 @@ graphify-out/
 plans/
 *.patch
 .agents/
+
+# self-hosted vendor assets
+/public/mathlive/fonts
+
