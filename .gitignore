@@ -73,3 +73,5 @@ plans/
 # self-hosted vendor assets
 /public/mathlive/fonts
 
+# Local Netlify folder
+.netlify
