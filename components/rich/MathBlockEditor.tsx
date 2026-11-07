@@ -53,6 +53,13 @@ export function MathBlockEditor({
 
     mf.mathVirtualKeyboardPolicy = "auto";
     mf.readOnly = !!readOnly;
+    mf.inlineShortcuts = {
+      ...mf.inlineShortcuts,
+      "'": "^{\\prime}",
+      "''": "^{\\prime\\prime}",
+      "'''": "^{\\prime\\prime\\prime}",
+    };
+
 
     const handleInput = () => {
       const raw = mf.getValue("latex-expanded");

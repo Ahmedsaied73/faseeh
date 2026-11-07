@@ -39,9 +39,12 @@ require.extensions['.css'] = function () {
 
 const {
   getScienceKeyboardLayout,
+  getNumericKeyboardLayout,
+  registerScienceKeyboard,
   tRich,
   richMessages,
 } = require('../lib/richContent/index.ts');
+
 
 console.log('--- Phase 4 Test Suite: Science Keyboard & ChemBlockEditor ---');
 
@@ -125,6 +128,95 @@ test('Science keyboard layout contains all required symbols and structures', () 
   assert.ok(rawKeyStrings.has('[redo]'), 'redo key present');
   assert.ok(rawKeyStrings.has('[left]'), 'left arrow present');
   assert.ok(rawKeyStrings.has('[right]'), 'right arrow present');
+
+  // Verify NO raw unrendered LaTeX markup in Science key labels
+  allKeys.forEach((k) => {
+    if (typeof k === 'object' && k && k.label) {
+      assert.ok(
+        !k.label.includes('\\Box') && !k.label.includes('\\frac') && !k.label.includes('\\sqrt') && !k.label.includes('\\pi'),
+        `Keycap label "${k.label}" must not contain raw LaTeX markup; use latex property for MathLive rendering`
+      );
+    }
+  });
+});
+
+test('Enhanced Numeric (1 2 3) keyboard layout contains all required student essentials', () => {
+  const layout = getNumericKeyboardLayout('ar');
+  assert.strictEqual(layout.id, 'numeric');
+  assert.strictEqual(layout.label, '1 2 3');
+  assert.ok(layout.rows.length === 4, 'Must have exactly 4 rows');
+
+  const allKeys = layout.rows.flat();
+  const keyLatexSet = new Set();
+  const rawKeyStrings = new Set();
+
+  allKeys.forEach((k) => {
+    if (typeof k === 'string') {
+      rawKeyStrings.add(k);
+    } else if (k && typeof k === 'object') {
+      if (k.latex) keyLatexSet.add(k.latex);
+      if (k.shift) {
+        if (typeof k.shift === 'string') keyLatexSet.add(k.shift);
+        else if (k.shift.latex) keyLatexSet.add(k.shift.latex);
+      }
+      if (Array.isArray(k.variants)) {
+        k.variants.forEach((v) => {
+          if (typeof v === 'string') keyLatexSet.add(v);
+          else if (v && v.latex) keyLatexSet.add(v.latex);
+        });
+      }
+    }
+  });
+
+  // 1. Digits & Arithmetic
+  ['[0]', '[1]', '[2]', '[3]', '[4]', '[5]', '[6]', '[7]', '[8]', '[9]'].forEach((d) => {
+    assert.ok(rawKeyStrings.has(d), `Digit ${d} must be present`);
+  });
+  ['[+]', '[-]', '[*]', '[/]', '[=]', '[.]'].forEach((op) => {
+    assert.ok(rawKeyStrings.has(op), `Operator ${op} must be present`);
+  });
+
+  // 2. Comma
+  assert.ok(keyLatexSet.has(','), 'Comma must be present in 1 2 3 page');
+
+  // 3. Parentheses
+  assert.ok(rawKeyStrings.has('[(]'), 'Parenthesis ( must be present');
+  assert.ok(rawKeyStrings.has('[)]'), 'Parenthesis ) must be present');
+
+  // 4. Powers & Roots
+  assert.ok(keyLatexSet.has('#@^2'), 'Square power key present');
+  assert.ok(keyLatexSet.has('#@^{#?}'), 'Power exponent key present');
+  assert.ok(keyLatexSet.has('\\sqrt{#0}'), 'Square root key present');
+
+  // 5. Absolute Value
+  assert.ok(keyLatexSet.has('\\left|#0\\right|'), 'Absolute value key present in 1 2 3');
+
+  // 6. Derivatives & Prime
+  assert.ok(keyLatexSet.has('#@^{\\prime}'), 'Derivative / prime key present');
+  assert.ok(keyLatexSet.has('#@^{\\prime\\prime}'), 'Double derivative variant present');
+  assert.ok(keyLatexSet.has("f'(x)"), "f'(x) variant present");
+  assert.ok(keyLatexSet.has("y'"), "y' variant present");
+
+  // 7. Constants: e, pi, infty
+  assert.ok(keyLatexSet.has('\\exponentialE'), "Euler's number e present in 1 2 3");
+  assert.ok(keyLatexSet.has('\\pi'), 'Pi present in 1 2 3');
+  assert.ok(keyLatexSet.has('\\infty'), 'Infinity present in 1 2 3');
+
+  // 8. Relations & Logic: neq, in, notin
+  assert.ok(keyLatexSet.has('\\neq'), 'Not equal present in 1 2 3');
+  assert.ok(keyLatexSet.has('\\in'), 'Element of present in 1 2 3');
+  assert.ok(keyLatexSet.has('\\notin'), 'Does not belong present in 1 2 3');
+
+  // 9. Trig functions & Reciprocals: sin/csc, cos/sec, tan/cot
+  assert.ok(keyLatexSet.has('\\sin'), 'Sine present in 1 2 3');
+  assert.ok(keyLatexSet.has('\\csc'), 'Cosecant (reciprocal) present in 1 2 3');
+  assert.ok(keyLatexSet.has('\\cos'), 'Cosine present in 1 2 3');
+  assert.ok(keyLatexSet.has('\\sec'), 'Secant (reciprocal) present in 1 2 3');
+  assert.ok(keyLatexSet.has('\\tan'), 'Tangent present in 1 2 3');
+  assert.ok(keyLatexSet.has('\\cot'), 'Cotangent (reciprocal) present in 1 2 3');
+
+  // 10. Integral
+  assert.ok(keyLatexSet.has('\\int'), 'Integral present in 1 2 3');
 });
 
 // 2. S2 Pipeline: Every key in Science keyboard produces valid KaTeX LaTeX
@@ -154,6 +246,48 @@ test('Every keycap in Science keyboard passes KaTeX rendering (S2 pipeline)', ()
     }
   });
 });
+
+test('Every keycap in Numeric (1 2 3) keyboard passes KaTeX rendering', () => {
+  const layout = getNumericKeyboardLayout('en');
+  const allKeys = layout.rows.flat();
+
+  allKeys.forEach((k) => {
+    if (typeof k === 'object' && k && k.latex) {
+      const testLatex = k.latex
+        .replace(/#@/g, '{x}')
+        .replace(/#0/g, '{x}')
+        .replace(/#\?/g, '{1}')
+        .replace(/\\exponentialE/g, '\\mathrm{e}');
+
+      try {
+        const html = katex.renderToString(testLatex, {
+          throwOnError: true,
+          trust: false,
+          strict: 'ignore',
+          maxExpand: 1000,
+        });
+        assert.ok(html.length > 0, `KaTeX output for ${k.latex} must not be empty`);
+      } catch (err) {
+        throw new Error(`KaTeX failed to render numeric keycap "${k.latex}" (tested as "${testLatex}"): ${err.message}`);
+      }
+    }
+  });
+});
+
+test('registerScienceKeyboard registers numeric layout first', () => {
+  // Mock window.mathVirtualKeyboard
+  global.window = {
+    mathVirtualKeyboard: {
+      layouts: [],
+    },
+  };
+  registerScienceKeyboard('ar');
+  assert.ok(Array.isArray(global.window.mathVirtualKeyboard.layouts));
+  assert.strictEqual(global.window.mathVirtualKeyboard.layouts[0].id, 'numeric', 'Numeric layout must be first');
+  assert.strictEqual(global.window.mathVirtualKeyboard.layouts[0].label, '1 2 3');
+  assert.strictEqual(global.window.mathVirtualKeyboard.layouts[1].id, 'science', 'Science layout must be second');
+});
+
 
 // 3. Chem Block: mhchem fixtures rendering in KaTeX
 test('ChemBlock KaTeX mhchem renders all valid chem fixtures', () => {
@@ -231,6 +365,56 @@ test('Phase 4 localization keys exist in both ar and en', () => {
     assert.strictEqual(tRich(key, 'ar'), richMessages.ar[key]);
     assert.strictEqual(tRich(key, 'en'), richMessages.en[key]);
   });
+});
+
+// 7. Verify normalizePrimes and calculus derivative robustness
+test('normalizePrimes handles composite primes, double superscripts, and escaped accents', () => {
+  const { normalizePrimes } = require('../lib/richContent/normalize');
+
+  const cases = [
+    { in: "f\\'(x) = 0", expected: "f^{\\prime}(x) = 0" },
+    { in: "f\\'\\'(x) = 6x - 6", expected: "f^{\\prime\\prime}(x) = 6x - 6" },
+    { in: "f\\'\\'\\'(x) = 6", expected: "f^{\\prime\\prime\\prime}(x) = 6" },
+    { in: "f(x)\\' = 0", expected: "f(x)^{\\prime} = 0" },
+    { in: "f(x)\\'\\' = 0", expected: "f(x)^{\\prime\\prime} = 0" },
+    { in: "y\\'' = 2", expected: "y^{\\prime\\prime} = 2" },
+    { in: "f^{\\prime}^{\\prime}(x)", expected: "f^{\\prime\\prime}(x)" },
+    { in: "f^{\\prime}^{\\prime}^{\\prime}(x)", expected: "f^{\\prime\\prime\\prime}(x)" },
+    { in: "f'^{\\prime}(x)", expected: "f^{\\prime\\prime}(x)" },
+    { in: "f''^{\\prime}(x)", expected: "f^{\\prime\\prime\\prime}(x)" },
+    { in: "f^\\prime ^\\prime (x)", expected: "f^{\\prime\\prime} (x)" },
+    { in: "x^{\\prime}}", expected: "x^{\\prime}" },
+    { in: "x^{\\prime\\prime}}", expected: "x^{\\prime\\prime}" },
+    { in: "د'(س)", expected: "د'(س)" },
+    { in: "د''(س)", expected: "د''(س)" },
+  ];
+
+  for (const c of cases) {
+    const norm = normalizePrimes(c.in);
+    assert.strictEqual(norm, c.expected, `Expected "${c.in}" to normalize to "${c.expected}", got "${norm}"`);
+    // Ensure it renders in KaTeX without throwing
+    const rendered = katex.renderToString(norm, {
+      throwOnError: true,
+      trust: false,
+      strict: 'ignore',
+    });
+    assert.ok(rendered.length > 0, `KaTeX failed to render normalized prime "${norm}"`);
+  }
+});
+
+// 8. Return / newline key on Science and Numeric layouts
+test('Return / New line key exists on both Science and Numeric keyboards', () => {
+  const sc = getScienceKeyboardLayout('ar');
+  const num = getNumericKeyboardLayout('ar');
+
+  const scKeys = sc.rows.flat();
+  const numKeys = num.rows.flat();
+
+  const hasScReturn = scKeys.some((k) => typeof k === 'object' && k && (k.command === 'addRowAfter' || k.label === '\u23CE'));
+  const hasNumReturn = numKeys.some((k) => typeof k === 'object' && k && (k.command === 'addRowAfter' || k.label === '\u23CE'));
+
+  assert.ok(hasScReturn, 'Science keyboard must have Return / Newline key');
+  assert.ok(hasNumReturn, 'Numeric keyboard must have Return / Newline key');
 });
 
 console.log(`\n=======================================`);
