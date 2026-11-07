@@ -215,4 +215,9 @@ Every rich answer is validated server-side on submission:
 - `HANDWRITING_ENABLED` (Backend):
   - `false` (default): Backend recognition endpoint returns 404/disabled without consuming external provider quotas.
 
+### 5. Multi-Agent & Execution Discipline
+- **Lean Execution (/ponytail)**: Execute directly against phase deliverables. Do not generate extra intermediate status markdown files or unrequested review abstractions beyond the required phase reports.
+- **English Communication Invariant**: All agent-to-agent communications, orchestration messages, progress updates, and technical reports must be composed in English.
+- **Local Test Environment Safety**: Set subject configuration overrides (e.g., `NEXT_PUBLIC_SUBJECT_NAME=MATH`) locally in `.env.local` only, preserving remote/production settings untouched.
+
 
