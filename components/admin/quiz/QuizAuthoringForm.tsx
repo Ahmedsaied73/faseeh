@@ -5,15 +5,18 @@ import { useRouter } from "next/navigation";
 import { upsertQuiz, uploadQuizImage } from "@/services/adminQuizService";
 import QuestionImagePicker from "./QuestionImagePicker";
 import type { StudentSafeQuiz, UpsertQuizInput } from "@/types/quiz";
+import { RichField } from "@/components/rich/RichField";
+import { subjectProfile, resolveEffectiveFormat } from "@/lib/subjectProfile";
+import { tRich } from "@/lib/richContent";
 
 type QuestionType = "radiogroup" | "comment" | "html" | "image";
 
-interface AuthorChoice {
+export interface AuthorChoice {
   id: string;
   text: string;
 }
 
-interface AuthorQuestion {
+export interface AuthorQuestion {
   id: string;
   type: QuestionType;
   title: string;
@@ -28,9 +31,10 @@ interface AuthorQuestion {
   imagePreview: string | null;
   imageUploading: boolean;
   imageError: string | null;
+  answerFormat: "RICH" | "PLAIN" | null;
 }
 
-interface QuizAuthoringFormProps {
+export interface QuizAuthoringFormProps {
   videoSlug: string;
 }
 
@@ -56,6 +60,7 @@ function newQuestion(): AuthorQuestion {
     imagePreview: null,
     imageUploading: false,
     imageError: null,
+    answerFormat: null,
   };
 }
 
@@ -78,7 +83,7 @@ function imageUploadErrorMessage(error: unknown): string {
   return errorMessage(error);
 }
 
-function buildPayload(title: string, timeLimit: string, passingScore: string, questions: AuthorQuestion[]): UpsertQuizInput {
+export function buildPayload(title: string, timeLimit: string, passingScore: string, questions: AuthorQuestion[]): UpsertQuizInput {
   // Internal element names are auto-assigned (q1..qn) — the المعرف field was
   // removed from the UI; the backend requires unique names for grading keys.
   const elements = questions.map((question, index) => {
@@ -95,6 +100,7 @@ function buildPayload(title: string, timeLimit: string, passingScore: string, qu
     if (question.type === "comment") {
       return {
         ...base,
+        ...(question.answerFormat ? { answerFormat: question.answerFormat } : {}),
         ...(question.imageUrl.trim() ? { imageLink: question.imageUrl.trim() } : {}),
       };
     }
@@ -117,6 +123,7 @@ function buildPayload(title: string, timeLimit: string, passingScore: string, qu
         type: question.type,
         modelAnswer: question.modelAnswer.trim(),
         points: Number(question.points),
+        ...(question.answerFormat ? { answerFormat: question.answerFormat } : {}),
         ...(question.rubric.trim() ? { rubric: question.rubric.trim().slice(0, 5000) } : {}),
         ...(question.aiEnabled ? { ai: { enabled: true } } : {}),
       };
@@ -277,9 +284,15 @@ export default function QuizAuthoringForm({ videoSlug }: QuizAuthoringFormProps)
                 <option value="radiogroup">اختيار من متعدد</option><option value="comment">مقالي</option><option value="html">HTML للعرض</option><option value="image">صورة للعرض</option>
               </select>
             </label>
-            <label className="sm:col-span-2 text-sm font-semibold text-on-surface/80">العنوان
-              <input value={question.title} onChange={(event) => updateQuestion(question.id, { title: event.target.value })} className="mt-1 w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-primary-color focus:outline-hidden focus:ring-2 focus:ring-primary-color/20" />
-            </label>
+            <div className="sm:col-span-2">
+              <RichField
+                label="نص السؤال (العنوان)"
+                value={question.title}
+                onChange={(val) => updateQuestion(question.id, { title: val })}
+                allowChem={subjectProfile().allowChem}
+                ariaLabel={`نص السؤال ${index + 1}`}
+              />
+            </div>
             {(question.type === "radiogroup" || question.type === "comment") && <label className="text-sm font-semibold text-on-surface/80">النقاط
               <input type="number" min="1" value={question.points} onChange={(event) => updateQuestion(question.id, { points: event.target.value })} className="mt-1 w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-primary-color focus:outline-hidden focus:ring-2 focus:ring-primary-color/20" />
             </label>}
@@ -335,10 +348,60 @@ export default function QuizAuthoringForm({ videoSlug }: QuizAuthoringFormProps)
                 />
               </div>
             </div>}
-            {question.type === "comment" && <div className="sm:col-span-2 space-y-3">
-              <label className="block text-sm font-semibold text-on-surface/80">الإجابة النموذجية
-                <textarea value={question.modelAnswer} onChange={(event) => updateQuestion(question.id, { modelAnswer: event.target.value })} className="mt-1 min-h-28 w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-primary-color focus:outline-hidden focus:ring-2 focus:ring-primary-color/20" />
-              </label>
+            {question.type === "comment" && <div className="sm:col-span-2 space-y-4">
+              {/* 3-State Answer Format Selector */}
+              <div className="rounded-lg border border-outline-variant/60 bg-surface-container-low p-3.5 space-y-2">
+                <label className="block text-sm font-semibold text-on-surface/90">
+                  {tRich("rich.answerFormatLabel", "ar")}
+                </label>
+                <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-on-surface/80">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name={`answerFormat-${question.id}`}
+                      checked={question.answerFormat === null}
+                      onChange={() => updateQuestion(question.id, { answerFormat: null })}
+                      className="accent-primary-color"
+                    />
+                    <span>
+                      {tRich("rich.answerFormatFollowSubject", "ar")}{" "}
+                      <span className="text-muted-foreground font-normal">
+                        ({resolveEffectiveFormat(null) === "RICH" ? "تلقائي: معادلات RICH" : "تلقائي: نص عادي PLAIN"})
+                      </span>
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name={`answerFormat-${question.id}`}
+                      checked={question.answerFormat === "RICH"}
+                      onChange={() => updateQuestion(question.id, { answerFormat: "RICH" })}
+                      className="accent-primary-color"
+                    />
+                    <span>{tRich("rich.answerFormatRich", "ar")}</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name={`answerFormat-${question.id}`}
+                      checked={question.answerFormat === "PLAIN"}
+                      onChange={() => updateQuestion(question.id, { answerFormat: "PLAIN" })}
+                      className="accent-primary-color"
+                    />
+                    <span>{tRich("rich.answerFormatPlain", "ar")}</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Rich Reference Answer with Security Disclaimer */}
+              <RichField
+                label="الإجابة النموذجية (مرجع التصحيح والذكاء الاصطناعي)"
+                value={question.modelAnswer}
+                onChange={(val) => updateQuestion(question.id, { modelAnswer: val })}
+                securityNote={tRich("rich.modelAnswerSecurityNote", "ar")}
+                allowChem={subjectProfile().allowChem}
+                ariaLabel={`الإجابة النموذجية للسؤال ${index + 1}`}
+              />
               <label className="block text-sm font-semibold text-on-surface/80">معايير التصحيح (اختياري)
                 <textarea value={question.rubric} onChange={(event) => updateQuestion(question.id, { rubric: event.target.value })} placeholder="مثال: ذكر العاصمة = ٥ درجات، ذكر السبب = ٥ درجات" className="mt-1 min-h-20 w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-primary-color focus:outline-hidden focus:ring-2 focus:ring-primary-color/20" />
               </label>
