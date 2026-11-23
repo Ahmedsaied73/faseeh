@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
@@ -10,9 +10,12 @@ import { AppDispatch } from "@/store/store";
 import { addNotification } from "@/store/slices/uiSlice";
 import { fetchBunnyPlaybackUrl, BunnyVideoError, fetchBunnyCourseVideos, formatBunnyDuration } from '@/services/bunnyVideoService';
 import type { BunnyPlaybackData, BunnyVideo } from '@/types/bunny';
-import type { QuizGate403 } from '@/types/quiz';
+import type { QuizGate403, QuizMeta } from '@/types/quiz';
+import { getQuizMeta } from '@/services/quizService';
 import { PageTitle } from '@/components/page-title';
 import { videoTitle as composeVideoTitle } from '@/lib/page-titles';
+import { VideoWatermark } from '@/components/video/VideoWatermark';
+import { CustomVideoPlayer } from '@/components/video/CustomVideoPlayer';
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error) return error.message;
@@ -30,6 +33,7 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
   // Bunny playback and video metadata
   const [playbackData, setPlaybackData] = useState<BunnyPlaybackData | null>(null);
   const [bunnyVideo, setBunnyVideo] = useState<BunnyVideo | null>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
 
   // Loading & error states
   const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +41,8 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
   const [isNotEnrolled, setIsNotEnrolled] = useState(false);
   const [isNotReady, setIsNotReady] = useState(false);
   const [quizGate, setQuizGate] = useState<QuizGate403 | null>(null);
+  const [quizMeta, setQuizMeta] = useState<QuizMeta | null>(null);
+  const [forceIframeFallback, setForceIframeFallback] = useState(false);
 
   // Video completion states
   const [completingVideo, setCompletingVideo] = useState(false);
@@ -53,8 +59,10 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
       setIsNotEnrolled(false);
       setIsNotReady(false);
       setQuizGate(null);
+      setQuizMeta(null);
       setBunnyVideo(null);
       setPlaybackData(null);
+      setForceIframeFallback(false);
 
       const courseVideos = await fetchBunnyCourseVideos(params.courseSlug);
 
@@ -151,6 +159,19 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
 
     checkVideoCompletion();
   }, [bunnyVideo]);
+
+  useEffect(() => {
+    if (!bunnyVideo?.slug) return;
+    let mounted = true;
+    getQuizMeta(bunnyVideo.slug)
+      .then((data) => {
+        if (mounted) setQuizMeta(data);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, [bunnyVideo?.slug]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 4. Handle Video Completion
@@ -289,9 +310,21 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
         </button>
       </div>
     );
+  } else if (playbackData?.hlsUrl && !forceIframeFallback) {
+    playerContent = (
+      <CustomVideoPlayer
+        hlsUrl={playbackData.hlsUrl}
+        playbackUrlFallback={playbackData.playbackUrl}
+        title={bunnyVideo?.title}
+        onFallbackToIframe={() => setForceIframeFallback(true)}
+      />
+    );
   } else if (playbackData?.playbackUrl) {
     playerContent = (
-      <div className="relative aspect-video w-full overflow-hidden bg-black">
+      <div
+        ref={playerContainerRef}
+        className="relative aspect-video w-full overflow-hidden bg-black select-none video-player-container"
+      >
         <iframe
           src={playbackData.playbackUrl}
           loading="lazy"
@@ -300,6 +333,7 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
           allowFullScreen
           title={bunnyVideo?.title || "مشغل فيديو Bunny Stream"}
         />
+        <VideoWatermark containerRef={playerContainerRef} />
       </div>
     );
   } else {
@@ -316,6 +350,8 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
     : null;
   const canTrackProgress = bunnyVideo != null && !isNotEnrolled && !quizGate;
   const quizHref = bunnyVideo ? `/course/${params.courseSlug}/video/${bunnyVideo.slug}/quiz` : undefined;
+  const isQuizPassed = !!(quizMeta?.exists && quizMeta.passed);
+  const isQuizFailed = !!(quizMeta?.exists && quizMeta.attempted && !quizMeta.passed && (quizMeta.bestScore !== null || !quizMeta.inProgressAttempt));
 
   return (
     <div className="w-full">
@@ -402,12 +438,27 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
                     href={quizHref}
                     className="flex items-start gap-3 rounded-lg px-2.5 py-3 transition hover:bg-brand-bg"
                   >
-                    <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-chip text-xs font-bold text-brand-muted">
-                      ٢
+                    <span
+                      className={
+                        "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold " +
+                        (isQuizPassed
+                          ? "bg-emerald-100 text-emerald-600"
+                          : isQuizFailed
+                            ? "bg-red-100 text-red-600"
+                            : "bg-brand-chip text-brand-muted")
+                      }
+                    >
+                      {isQuizPassed ? "✓" : isQuizFailed ? "✕" : "٢"}
                     </span>
                     <span className="flex-1">
                       <span className="block text-sm font-semibold text-brand-text">الاختبار القصير</span>
-                      <span className="mt-0.5 block text-xs text-brand-muted">انتقل إلى صفحة الاختبار للبدء</span>
+                      <span className="mt-0.5 block text-xs text-brand-muted">
+                        {isQuizPassed
+                          ? `تم الاجتياز بنجاح${quizMeta?.bestScore != null ? ` · النتيجة: ${quizMeta.bestScore}٪` : ""}`
+                          : isQuizFailed
+                            ? `لم يتم الاجتياز${quizMeta?.bestScore != null ? ` · النتيجة: ${quizMeta.bestScore}٪` : ""}`
+                            : "انتقل إلى صفحة الاختبار للبدء"}
+                      </span>
                     </span>
                   </Link>
                 ) : (
