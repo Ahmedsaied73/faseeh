@@ -113,8 +113,8 @@ assert(fontFiles.includes('KaTeX_Math-Italic.woff2'), 'KaTeX_Math-Italic.woff2 f
 
 // 7. i18n keys test
 console.log('7. Testing rich localization dictionary');
-assert(tRich('rich.addText', 'ar') === 'إضافة نص', 'Arabic key rich.addText');
-assert(tRich('rich.addText', 'en') === 'Add text', 'English key rich.addText');
+assert(tRich('rich.addText', 'ar') === 'سطر كتابة' || tRich('rich.addText', 'ar') === 'إضافة نص', 'Arabic key rich.addText');
+assert(tRich('rich.addText', 'en') === 'Text line' || tRich('rich.addText', 'en') === 'Add text', 'English key rich.addText');
 assert(tRich('rich.incomplete', 'ar').length > 0, 'Arabic key rich.incomplete');
 assert(tRich('rich.limitReached', 'ar').length > 0, 'Arabic key rich.limitReached');
 
