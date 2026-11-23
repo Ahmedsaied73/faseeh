@@ -76,6 +76,11 @@ export interface BunnyPlaybackData {
    * Example: https://iframe.mediadelivery.net/embed/LIBRARY_ID/VIDEO_GUID?token=...&expires=...
    */
   playbackUrl: string;
+  /**
+   * Optional direct signed HLS stream URL for native / in-app players.
+   * Example: https://vz-xxx.b-cdn.net/bcdn_token=.../playlist.m3u8
+   */
+  hlsUrl?: string | null;
   /** Unix timestamp (seconds) when the signed token expires. */
   expiresAt: number;
 }
