@@ -15,6 +15,7 @@ import { getQuizMeta } from '@/services/quizService';
 import { PageTitle } from '@/components/page-title';
 import { videoTitle as composeVideoTitle } from '@/lib/page-titles';
 import { VideoWatermark } from '@/components/video/VideoWatermark';
+import { CustomVideoPlayer } from '@/components/video/CustomVideoPlayer';
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error) return error.message;
@@ -41,6 +42,7 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
   const [isNotReady, setIsNotReady] = useState(false);
   const [quizGate, setQuizGate] = useState<QuizGate403 | null>(null);
   const [quizMeta, setQuizMeta] = useState<QuizMeta | null>(null);
+  const [forceIframeFallback, setForceIframeFallback] = useState(false);
 
   // Video completion states
   const [completingVideo, setCompletingVideo] = useState(false);
@@ -60,6 +62,7 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
       setQuizMeta(null);
       setBunnyVideo(null);
       setPlaybackData(null);
+      setForceIframeFallback(false);
 
       const courseVideos = await fetchBunnyCourseVideos(params.courseSlug);
 
@@ -306,6 +309,15 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
           إعادة المحاولة
         </button>
       </div>
+    );
+  } else if (playbackData?.hlsUrl && !forceIframeFallback) {
+    playerContent = (
+      <CustomVideoPlayer
+        hlsUrl={playbackData.hlsUrl}
+        playbackUrlFallback={playbackData.playbackUrl}
+        title={bunnyVideo?.title}
+        onFallbackToIframe={() => setForceIframeFallback(true)}
+      />
     );
   } else if (playbackData?.playbackUrl) {
     playerContent = (
