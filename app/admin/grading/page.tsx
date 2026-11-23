@@ -430,7 +430,7 @@ export default function AdminGradingPage() {
                     </div>
                     <div className="min-h-[120px] rounded-xl border border-brand-border/60 bg-brand-bg p-4 text-sm leading-relaxed text-brand-text">
                       {hasStudentAnswer ? (
-                        <RichView value={currentQuestion.studentAnswer} />
+                        <RichView value={currentQuestion.studentAnswer} numbered />
                       ) : (
                         <span className="italic text-brand-muted">لم يكتب الطالب إجابة لهذا السؤال.</span>
                       )}
@@ -441,7 +441,7 @@ export default function AdminGradingPage() {
                     <p className="mb-1.5 text-xs font-bold text-brand-muted">الإجابة النموذجية المعتمدة</p>
                     <div className="min-h-[120px] rounded-xl border border-brand-border/60 bg-brand-bg/50 p-4 text-sm leading-relaxed text-brand-text">
                       {currentQuestion.modelAnswer ? (
-                        <RichView value={currentQuestion.modelAnswer} />
+                        <RichView value={currentQuestion.modelAnswer} numbered />
                       ) : (
                         <span className="italic text-brand-muted">لا توجد إجابة نموذجية مسجلة.</span>
                       )}

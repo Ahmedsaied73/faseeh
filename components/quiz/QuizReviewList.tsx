@@ -133,7 +133,7 @@ function EssayCard({ q, index }: { q: EssayResultQuestion; index: number }) {
           <h3 className="mb-2 text-xs font-bold text-brand-muted">إجابتك</h3>
           <div className="rounded-xl border border-brand-border bg-brand-bg p-4 text-sm leading-relaxed text-brand-muted-strong">
             {q.studentAnswer ? (
-              <RichView value={q.studentAnswer} />
+              <RichView value={q.studentAnswer} numbered />
             ) : (
               <span className="italic text-brand-muted">لم تتم الإجابة</span>
             )}
@@ -145,7 +145,7 @@ function EssayCard({ q, index }: { q: EssayResultQuestion; index: number }) {
           <div>
             <h3 className="mb-2 text-xs font-bold text-brand-primary">الإجابة النموذجية</h3>
             <div className="rounded-xl border border-brand-primary/20 bg-brand-primary/5 p-4 text-sm leading-relaxed text-brand-muted-strong">
-              <RichView value={q.modelAnswer} />
+              <RichView value={q.modelAnswer} numbered />
             </div>
           </div>
         )}
