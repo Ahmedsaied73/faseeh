@@ -107,8 +107,10 @@ export function getScienceKeyboardLayout(locale: "ar" | "en" = "ar"): ScienceKey
           variants: [
             "#@^{\\prime\\prime}",
             "#@^{\\prime\\prime\\prime}",
+            { latex: "f(x)", insert: "f\\left(x\\right)" },
             { latex: "f'(x)", insert: "f^{\\prime}(x)" },
             { latex: "y'", insert: "y^{\\prime}" },
+            { latex: "\\frac{dy}{dx}", insert: "\\frac{dy}{dx}" },
             { latex: "\\frac{\\mathrm{d}}{\\mathrm{d}x}", insert: "\\frac{\\mathrm{d}}{\\mathrm{d}x}" },
           ],
           tooltip: "Derivative (f')",
@@ -152,8 +154,10 @@ export function getNumericKeyboardLayout(locale: "ar" | "en" = "ar"): ScienceKey
           variants: [
             "#@^{\\prime\\prime}",
             "#@^{\\prime\\prime\\prime}",
+            { latex: "f(x)", insert: "f\\left(x\\right)" },
             { latex: "f'(x)", insert: "f^{\\prime}(x)" },
             { latex: "y'", insert: "y^{\\prime}" },
+            { latex: "\\frac{dy}{dx}", insert: "\\frac{dy}{dx}" },
             { latex: "\\frac{\\mathrm{d}}{\\mathrm{d}x}", insert: "\\frac{\\mathrm{d}}{\\mathrm{d}x}" },
           ],
           tooltip: "Derivative (f')",

@@ -1,113 +1,133 @@
 "use client";
-
-import React, { useEffect, useRef, useState } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { MathfieldElement } from "mathlive";
-import { normalizeMathLatex, hasPlaceholder, registerScienceKeyboard } from "@/lib/richContent";
+import { hasPlaceholder, normalizeMathLatex } from "@/lib/richContent";
+import { configureField, loadMathlive } from "./mathlive-setup";
 
-type Props = {
+export type MathHandle = {
+  focus: () => void;
+  insert: (latex: string) => void;
+  /** Caret movement for external navigation */
+  command: (name: "moveToNextChar" | "moveToPreviousChar") => void;
+};
+
+export interface MathBlockEditorProps {
   value: string;
   onChange: (latex: string, incomplete: boolean) => void;
   ariaLabel: string;
+  placeholder?: string;
   readOnly?: boolean;
   autoFocus?: boolean;
-  className?: string;
+  /** Enter pressed in a non-empty field: parent adds a new equation line. */
+  onEnter?: () => void;
+  /** Backspace pressed in an empty field: parent removes the line. */
+  onBackspaceEmpty?: () => void;
+  onFocus?: () => void;
   locale?: "ar" | "en";
-};
+  className?: string;
+}
 
-export function MathBlockEditor({
-  value,
-  onChange,
-  ariaLabel,
-  readOnly,
-  autoFocus,
-  className,
-  locale = "ar",
-}: Props) {
-  const ref = useRef<MathfieldElement>(null);
+export const MathBlockEditor = forwardRef<MathHandle, MathBlockEditorProps>(function MathBlockEditor(
+  { value, onChange, ariaLabel, placeholder = "", readOnly, autoFocus, onEnter, onBackspaceEmpty, onFocus, className },
+  handle
+) {
+  const ref = useRef<MathfieldElement | null>(null);
   const [ready, setReady] = useState(false);
+  const [empty, setEmpty] = useState(value.trim() === "");
 
-  // Load MathLive client-side only
+  // Keep latest callbacks without re-binding listeners
+  const cb = useRef({ onChange, onEnter, onBackspaceEmpty, onFocus });
+  cb.current = { onChange, onEnter, onBackspaceEmpty, onFocus };
+
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const { MathfieldElement } = await import("mathlive");
-        if (cancelled) return;
-        MathfieldElement.fontsDirectory = "/mathlive/fonts";
-        MathfieldElement.soundsDirectory = null;
-        registerScienceKeyboard(locale);
-        setReady(true);
-      } catch (err) {
-        console.error("Failed to load MathLive:", err);
-      }
-    })();
+    loadMathlive().then(() => {
+      if (!cancelled) setReady(true);
+    });
     return () => {
       cancelled = true;
     };
-  }, [locale]);
+  }, []);
 
-  // Field -> Parent event listener
+  useImperativeHandle(handle, () => ({
+    focus: () => ref.current?.focus(),
+    insert: (latex: string) => {
+      const mf = ref.current;
+      if (!mf) return;
+      mf.focus();
+      mf.insert(latex, { selectionMode: "placeholder", format: "latex" });
+    },
+    command: (name: "moveToNextChar" | "moveToPreviousChar") => {
+      ref.current?.executeCommand(name);
+    },
+  }));
+
   useEffect(() => {
     const mf = ref.current;
     if (!ready || !mf) return;
-
-    mf.mathVirtualKeyboardPolicy = "auto";
+    configureField(mf);
     mf.readOnly = !!readOnly;
-    mf.inlineShortcuts = {
-      ...mf.inlineShortcuts,
-      "'": "^{\\prime}",
-      "''": "^{\\prime\\prime}",
-      "'''": "^{\\prime\\prime\\prime}",
-    };
 
-
-    const handleInput = () => {
+    const read = () => {
       const raw = mf.getValue("latex-expanded");
-      const normalized = normalizeMathLatex(raw);
-      const incomplete = hasPlaceholder(raw);
-      onChange(normalized, incomplete);
+      const norm = normalizeMathLatex(raw);
+      setEmpty(norm === "" || norm === "{}");
+      cb.current.onChange(norm, hasPlaceholder(raw));
     };
 
-    mf.addEventListener("input", handleInput);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.isComposing) return;
+      if (e.key === "Enter" && !e.shiftKey && cb.current.onEnter) {
+        if (mf.getValue("latex-expanded").trim() !== "") {
+          e.preventDefault();
+          e.stopPropagation();
+          cb.current.onEnter();
+        }
+      } else if (e.key === "Backspace" && cb.current.onBackspaceEmpty) {
+        if (mf.getValue("latex-expanded").trim() === "") {
+          e.preventDefault();
+          e.stopPropagation();
+          cb.current.onBackspaceEmpty();
+        }
+      }
+    };
+
+    const onFocusHandler = () => {
+      cb.current.onFocus?.();
+    };
+
+    mf.addEventListener("input", read);
+    mf.addEventListener("keydown", onKeyDown, true);
+    mf.addEventListener("focus", onFocusHandler);
     return () => {
-      mf.removeEventListener("input", handleInput);
+      mf.removeEventListener("input", read);
+      mf.removeEventListener("keydown", onKeyDown, true);
+      mf.removeEventListener("focus", onFocusHandler);
     };
-  }, [ready, onChange, readOnly]);
+  }, [ready, readOnly]);
 
-  // Parent -> Field sync (only when different, silently)
+  // Parent -> field, only when different (silent, avoids loops)
   useEffect(() => {
     const mf = ref.current;
     if (!ready || !mf) return;
-
-    const currentNormalized = normalizeMathLatex(mf.getValue("latex-expanded"));
-    if (currentNormalized !== value) {
+    if (normalizeMathLatex(mf.getValue("latex-expanded")) !== value) {
       mf.setValue(value, { silenceNotifications: true });
+      setEmpty(value.trim() === "");
     }
   }, [ready, value]);
 
-  // Autofocus when element becomes ready
   useEffect(() => {
-    if (ready && autoFocus && ref.current) {
-      ref.current.focus();
-    }
+    if (ready && autoFocus) ref.current?.focus();
   }, [ready, autoFocus]);
 
   return (
-    <div className={`relative ${className || ""}`}>
-      <math-field
-        ref={ref}
-        dir="ltr"
-        aria-label={ariaLabel}
-        style={{
-          display: "block",
-          width: "100%",
-          minHeight: "44px",
-          padding: "8px 12px",
-          borderRadius: "0.5rem",
-          fontSize: "1.25rem",
-          outline: "none",
-        }}
-      />
+    <div className={`rs-math ${className || ""}`} data-empty={empty ? "true" : "false"}>
+      <math-field ref={ref as never} aria-label={ariaLabel} dir="ltr" />
+      {empty && placeholder && (
+        <span className="rs-ph" aria-hidden="true">
+          {placeholder}
+        </span>
+      )}
     </div>
   );
-}
+});
