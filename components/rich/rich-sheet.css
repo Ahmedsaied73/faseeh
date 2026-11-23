@@ -1,0 +1,255 @@
+/* ───────────────────────────────────────────────────────────────
+   rich-sheet.css — styles for RichEditor ("ورقة الحل") and RichView.
+   All colours come from the --rs-* tokens below. In the real project, point
+   them at the existing theme variables (see the mapping block) and nothing
+   else in this file needs to change. Logical properties are used throughout,
+   so RTL/LTR needs no extra rules.
+   ─────────────────────────────────────────────────────────────── */
+
+/* ① TOKENS — mapped to the platform's brand theme variables */
+.rs, .rv {
+  --rs-ink: var(--color-brand-ink, #0B1119);
+  --rs-muted: var(--color-brand-muted-strong, #475569);
+  --rs-surface: var(--color-brand-surface, #FFFFFF);
+  --rs-field: var(--color-brand-surface, #FFFFFF);
+  --rs-border: var(--color-brand-border, #E2E8F0);
+  --rs-border-strong: var(--color-brand-border-strong, #CBD5E1);
+  --rs-primary: var(--color-brand-primary, #4685CE);
+  --rs-primary-soft: color-mix(in srgb, var(--color-brand-primary, #4685CE) 10%, transparent);
+  --rs-primary-ring: color-mix(in srgb, var(--color-brand-primary, #4685CE) 22%, transparent);
+  --rs-math-bg: color-mix(in srgb, var(--color-brand-primary, #4685CE) 6%, var(--color-brand-surface, #FFFFFF));
+  --rs-math-border: color-mix(in srgb, var(--color-brand-primary, #4685CE) 30%, transparent);
+  --rs-rule: color-mix(in srgb, var(--color-brand-primary, #4685CE) 14%, transparent);
+  --rs-chip: var(--color-brand-chip, #F1F5F9);
+  --rs-warn: #9A5B00;
+  --rs-warn-bg: #FFF4DD;
+  --rs-danger: var(--color-brand-accent, #EA5D79);
+  --rs-shadow: 0 12px 32px -10px color-mix(in srgb, var(--color-brand-ink, #0B1119) 30%, transparent);
+}
+:where(.dark, [data-theme="dark"]) .rs,
+:where(.dark, [data-theme="dark"]) .rv {
+  --rs-ink: var(--color-brand-text, #EDF1F5);
+  --rs-muted: var(--color-brand-muted-strong, #C3D0D4);
+  --rs-surface: var(--color-brand-surface, #12181C);
+  --rs-field: var(--color-brand-chip, #182027);
+  --rs-border: var(--color-brand-border, #232C31);
+  --rs-border-strong: var(--color-brand-border-strong, #38444B);
+  --rs-primary: var(--color-brand-primary, #5C93D6);
+  --rs-primary-soft: color-mix(in srgb, var(--color-brand-primary, #5C93D6) 14%, transparent);
+  --rs-primary-ring: color-mix(in srgb, var(--color-brand-primary, #5C93D6) 28%, transparent);
+  --rs-math-bg: color-mix(in srgb, var(--color-brand-primary, #5C93D6) 12%, var(--color-brand-surface, #12181C));
+  --rs-math-border: color-mix(in srgb, var(--color-brand-primary, #5C93D6) 34%, transparent);
+  --rs-rule: color-mix(in srgb, var(--color-brand-primary, #5C93D6) 11%, transparent);
+  --rs-chip: var(--color-brand-chip, #182027);
+  --rs-warn: #F0B24D;
+  --rs-warn-bg: #2B2314;
+  --rs-danger: var(--color-brand-accent, #EF7089);
+  --rs-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.6);
+}
+
+/* ② SHEET */
+.rs { position: relative; display: flex; flex-direction: column; gap: 16px; color: var(--rs-ink); font-family: inherit; }
+.rs { --rs-gap: 34px; }
+.rs-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--rs-gap); }
+
+.rs-line {
+  position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 12px;
+  scroll-margin-bottom: var(--rs-gap-bottom, 24px); scroll-margin-top: 90px;
+  animation: rs-in 0.24s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes rs-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* step badge + connector */
+.rs-badge {
+  position: relative; z-index: 1; margin-top: 13px; width: 32px; height: 32px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 13px; font-weight: 700; line-height: 1;
+  color: var(--rs-muted); background: var(--rs-surface); border: 1.5px solid var(--rs-border-strong);
+  transition: background .2s, color .2s, border-color .2s, transform .2s;
+}
+.rs-line:not(:last-child)::before {
+  content: ""; position: absolute; inset-inline-start: 15px; top: 45px; bottom: calc(-1 * var(--rs-gap) - 13px); width: 2px;
+  background: repeating-linear-gradient(to bottom, var(--rs-border-strong) 0 4px, transparent 4px 9px); opacity: .8;
+}
+.rs-line.has-content .rs-badge { color: var(--rs-primary); border-color: var(--rs-primary); background: var(--rs-primary-soft); }
+.rs-line.is-active .rs-badge { color: var(--rs-surface); background: var(--rs-primary); border-color: var(--rs-primary); transform: scale(1.06); }
+
+.rs-body { min-width: 0; }
+
+/* writing line: ruled notebook paper */
+.rs-text {
+  border: 1.5px solid var(--rs-border); border-radius: 16px; background: var(--rs-field);
+  transition: border-color .15s, box-shadow .15s;
+}
+.rs-text textarea {
+  display: block; width: 100%; min-height: 58px; max-height: 60vh; resize: none; overflow: hidden;
+  border: 0; outline: 0; background: transparent; color: inherit; font: inherit; font-size: 1.0625rem; line-height: 34px;
+  padding: 12px 16px 12px; border-radius: 16px;
+  background-image: linear-gradient(to bottom, transparent 33px, var(--rs-rule) 33px 34px);
+  background-size: 100% 34px; background-origin: content-box; background-clip: content-box; background-attachment: local;
+}
+.rs-text textarea::placeholder { color: var(--rs-muted); opacity: .85; }
+
+/* equation line */
+.rs-math {
+  position: relative; display: flex; align-items: center; min-height: 62px; padding: 6px 16px;
+  border: 1.5px solid var(--rs-math-border); border-radius: 16px; background: var(--rs-math-bg);
+  transition: border-color .15s, box-shadow .15s;
+}
+.rs-math math-field {
+  display: block; width: 100%; min-height: 46px; border: 0; background: transparent; outline: 0; box-shadow: none;
+  font-size: 1.5rem; color: var(--rs-ink); --caret-color: var(--rs-primary);
+  --selection-background-color: var(--rs-primary-ring); --selection-color: var(--rs-ink); --hue: 212;
+}
+.rs-math math-field::part(container) { padding-block: 4px; }
+.rs-math math-field::part(virtual-keyboard-toggle),
+.rs-math math-field::part(menu-toggle) { display: none; }
+.rs-math math-field:focus, .rs-math math-field:focus-within { outline: 0; }
+.rs-ph { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--rs-muted); font-size: .98rem; pointer-events: none; direction: rtl; }
+[dir="ltr"] .rs-ph, .rs[dir="ltr"] .rs-ph { direction: ltr; }
+
+.rs-line.is-active .rs-text, .rs-line.is-active .rs-math { border-color: var(--rs-primary); box-shadow: 0 0 0 4px var(--rs-primary-ring); }
+
+.rs-note { margin: 8px 6px 0; font-size: .8rem; line-height: 1.5; color: var(--rs-muted); }
+.rs-note--warn { color: var(--rs-warn); background: var(--rs-warn-bg); padding: 6px 12px; border-radius: 10px; }
+
+/* per-line controls: only on the focused / hovered line */
+.rs-actions {
+  position: absolute; top: -33px; inset-inline-end: 6px; z-index: 3; display: flex; gap: 2px; padding: 3px;
+  background: var(--rs-surface); border: 1px solid var(--rs-border); border-radius: 999px;
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--rs-ink) 25%, transparent);
+  opacity: 0; transform: translateY(4px); pointer-events: none; transition: opacity .15s, transform .15s;
+}
+.rs-line.is-active .rs-actions { opacity: 1; transform: none; pointer-events: auto; }
+@media (hover: hover) { .rs-line:hover .rs-actions { opacity: 1; transform: none; pointer-events: auto; } }
+.rs-actions button {
+  width: 38px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 999px; background: transparent;
+  color: var(--rs-muted); cursor: pointer; transition: background .12s, color .12s;
+}
+.rs-actions button:hover:not(:disabled) { background: var(--rs-chip); color: var(--rs-ink); }
+.rs-actions button.rs-del:hover { background: color-mix(in srgb, var(--rs-danger) 12%, transparent); color: var(--rs-danger); }
+.rs-actions button:disabled { opacity: .3; cursor: default; }
+@media (pointer: coarse) { .rs { --rs-gap: 40px; } .rs-actions button { width: 44px; height: 38px; } .rs-actions { top: -39px; } }
+
+/* add row */
+.rs-add { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-inline-start: 44px; }
+.rs-span { grid-column: 1 / -1; margin: 0; }
+.rs-btn {
+  min-height: 54px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 14px;
+  border: 1.5px dashed var(--rs-border-strong); border-radius: 16px; background: transparent; color: var(--rs-ink);
+  font: inherit; font-weight: 600; font-size: .95rem; cursor: pointer; transition: background .15s, border-color .15s, transform .08s;
+}
+.rs-btn:hover:not(:disabled) { background: var(--rs-chip); }
+.rs-btn:active:not(:disabled) { transform: scale(.98); }
+.rs-btn:disabled { opacity: .45; cursor: not-allowed; }
+.rs-btn--math { border-style: solid; border-color: var(--rs-math-border); background: var(--rs-primary-soft); color: var(--rs-primary); }
+.rs-btn--math:hover:not(:disabled) { background: var(--rs-primary-ring); }
+.rs-sigma { font-family: "Cambria Math", "STIX Two Math", serif; font-size: 1.15rem; margin-inline-end: -2px; }
+.rs-btn:focus-visible, .rs-chip:focus-visible, .rs-actions button:focus-visible { outline: 2px solid var(--rs-primary); outline-offset: 2px; }
+
+/* ③ SYMBOL TRAY — docks above the OS keyboard */
+.rs-tray {
+  position: fixed; z-index: 40; inset-inline: 0; margin-inline: auto; width: min(780px, calc(100% - 16px));
+  bottom: calc(var(--rs-inset, 0px) + 8px + var(--rs-safe, 0px));
+  display: flex; align-items: stretch; overflow: hidden; border-radius: 20px;
+  background: color-mix(in srgb, var(--rs-surface) 94%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border: 1px solid var(--rs-border); box-shadow: var(--rs-shadow);
+  animation: rs-tray-in .2s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes rs-tray-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.rs-strip {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 8px; overflow-x: auto; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+}
+.rs-strip::-webkit-scrollbar { display: none; }
+.rs-group { display: flex; align-items: center; gap: 6px; }
+.rs-sep { flex: none; width: 1px; height: 26px; background: var(--rs-border-strong); margin-inline: 4px; opacity: .7; }
+.rs-chip {
+  flex: none; min-width: 44px; height: 44px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 0; border-radius: 13px; background: var(--rs-chip); color: var(--rs-ink); cursor: pointer;
+  font: 500 1.3rem/1 "Cambria Math", "STIX Two Math", "Latin Modern Math", "Noto Serif", serif;
+  transition: background .12s, transform .08s; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.rs-chip:hover { background: var(--rs-primary-ring); }
+.rs-chip:active { transform: scale(.92); background: var(--rs-primary-ring); }
+.rs-chip--struct { background: var(--rs-primary-soft); color: var(--rs-primary); }
+.rs-nav { flex: none; display: flex; align-items: center; gap: 4px; padding: 8px; border-inline-start: 1px solid var(--rs-border); }
+.rs-chip--nav { min-width: 40px; padding: 0; font-size: 1rem; }
+.rs-chip--all { font-family: inherit; font-size: .85rem; font-weight: 600; background: transparent; color: var(--rs-ink); border: 1.5px solid var(--rs-border-strong); padding: 0 12px; }
+.rs-chip--all:hover { background: var(--rs-chip); }
+@media (max-width: 520px) { .rs-all-label { display: none; } .rs-chip--all { padding: 0; min-width: 44px; } .rs-add { margin-inline-start: 0; } .rs-btn { padding: 0 8px; font-size: .9rem; white-space: nowrap; } }
+.rs-g-box { display: inline-block; width: 7px; height: 7px; margin-inline-start: 1px; border: 1.4px dashed currentColor; border-radius: 1.5px; vertical-align: super; }
+.rs-g-sub { vertical-align: baseline; position: relative; top: .35em; }
+.rs-g-frac { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+.rs-g-frac i { display: block; width: 11px; height: 8px; border: 1.8px solid currentColor; border-radius: 2.5px; }
+.rs-g-frac b { display: block; width: 18px; height: 2px; border-radius: 1px; background: currentColor; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rs-line, .rs-tray { animation: none; }
+  .rs-badge, .rs-actions, .rs-btn, .rs-chip { transition: none; }
+}
+
+/* ④ READ-ONLY VIEW */
+.rv { --rv-gap: 14px; color: var(--rs-ink); display: flex; flex-direction: column; gap: var(--rv-gap); }
+.rv-row { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.rv-text { margin: 0; flex: 1; min-width: 0; white-space: pre-wrap; line-height: 1.9; }
+.rv-math { flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; padding: 4px 2px; }
+.rv-math .katex-display { margin: 0; text-align: left; }
+.rv--numbered .rv-row { padding-block: 2px; }
+.rv-badge { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; margin-top: 3px; font-size: 12px; font-weight: 700; color: var(--rs-primary); background: var(--rs-primary-soft); border: 1.5px solid var(--rs-primary); }
+
+/* ⑤ MATHLIVE FULL KEYBOARD THEME (it lives on <body>, outside .rs) */
+:root {
+  --keyboard-zindex: 60;
+  --keyboard-background: var(--color-brand-bg, #EDF1F6);
+  --keyboard-border: var(--color-brand-border, #D3DBE6);
+  --keyboard-accent-color: var(--color-brand-primary, #3F7FCB);
+  --keyboard-toolbar-text: var(--color-brand-muted-strong, #4A5868);
+  --keyboard-toolbar-text-active: var(--color-brand-primary, #3F7FCB);
+  --keyboard-toolbar-background-hover: color-mix(in srgb, var(--color-brand-primary, #3F7FCB) 10%, transparent);
+  --keyboard-toolbar-background-selected: transparent;
+  --keycap-background: var(--color-brand-surface, #FFFFFF);
+  --keycap-background-hover: var(--color-brand-hover, #F3F7FC);
+  --keycap-background-active: color-mix(in srgb, var(--color-brand-primary, #3F7FCB) 15%, var(--color-brand-surface, #FFFFFF));
+  --keycap-background-pressed: color-mix(in srgb, var(--color-brand-primary, #3F7FCB) 15%, var(--color-brand-surface, #FFFFFF));
+  --keycap-border: var(--color-brand-border, #D3DBE6);
+  --keycap-border-bottom: var(--color-brand-border-strong, #BFCAD8);
+  --keycap-text: var(--color-brand-ink, #0B1119);
+  --keycap-secondary-background: var(--color-brand-chip, #DDE4EE);
+  --keycap-secondary-background-hover: color-mix(in srgb, var(--color-brand-muted, #94A3B8) 25%, var(--color-brand-surface, #FFFFFF));
+  --keycap-secondary-text: var(--color-brand-ink, #0B1119);
+  --keycap-secondary-border: var(--color-brand-border, #C7D1DF);
+  --keycap-secondary-border-bottom: var(--color-brand-border-strong, #B3BFD0);
+  --keycap-primary-background: var(--color-brand-primary, #3F7FCB);
+  --keycap-primary-background-hover: color-mix(in srgb, var(--color-brand-primary, #3F7FCB) 85%, #000);
+  --keycap-primary-text: #FFFFFF;
+  --keycap-shift-text: var(--color-brand-primary, #3F7FCB);
+  --variant-panel-background: var(--color-brand-surface, #FFFFFF);
+  --variant-keycap-text: var(--color-brand-ink, #0B1119);
+}
+:root[data-theme="dark"], :root.dark {
+  --keyboard-background: var(--color-brand-bg, #121A23);
+  --keyboard-border: var(--color-brand-border, #27333F);
+  --keyboard-accent-color: var(--color-brand-primary, #78AEEA);
+  --keyboard-toolbar-text: var(--color-brand-muted, #98A6B8);
+  --keyboard-toolbar-text-active: var(--color-brand-primary, #78AEEA);
+  --keycap-background: var(--color-brand-surface, #1E2833);
+  --keycap-background-hover: var(--color-brand-hover, #26323F);
+  --keycap-background-active: color-mix(in srgb, var(--color-brand-primary, #5C93D6) 25%, var(--color-brand-surface, #1E2833));
+  --keycap-background-pressed: color-mix(in srgb, var(--color-brand-primary, #5C93D6) 25%, var(--color-brand-surface, #1E2833));
+  --keycap-border: var(--color-brand-border, #2D3A48);
+  --keycap-border-bottom: var(--color-brand-ink, #0D1319);
+  --keycap-text: var(--color-brand-text, #E9EEF4);
+  --keycap-secondary-background: var(--color-brand-chip, #2A3644);
+  --keycap-secondary-background-hover: color-mix(in srgb, var(--color-brand-primary, #5C93D6) 15%, var(--color-brand-chip, #2A3644));
+  --keycap-secondary-text: var(--color-brand-text, #E9EEF4);
+  --keycap-secondary-border: var(--color-brand-border, #34424F);
+  --keycap-secondary-border-bottom: var(--color-brand-ink, #0D1319);
+  --keycap-primary-background: var(--color-brand-primary, #4F8FD6);
+  --keycap-primary-text: #fff;
+  --keycap-shift-text: var(--color-brand-primary, #78AEEA);
+  --variant-panel-background: var(--color-brand-surface, #1E2833);
+  --variant-keycap-text: var(--color-brand-text, #E9EEF4);
+}
