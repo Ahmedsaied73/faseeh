@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import katex from "katex";
+import "katex/dist/katex.min.css";
 import "katex/contrib/mhchem";
 import { parseRich } from "@/lib/richContent";
 
@@ -26,21 +27,12 @@ function MathHtml({ tex }: { tex: string }) {
     }
   }, [tex]);
 
-
-  if (!html) {
-    return (
-      <code dir="ltr" className="my-2 block overflow-x-auto rounded bg-muted/50 p-2 font-mono text-sm">
-        {tex}
-      </code>
-    );
-  }
-
-  return (
-    <div
-      dir="ltr"
-      className="my-2 overflow-x-auto text-center"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+  return html ? (
+    <div dir="ltr" className="rv-math" dangerouslySetInnerHTML={{ __html: html }} />
+  ) : (
+    <code dir="ltr" className="my-2 block overflow-x-auto rounded bg-muted/50 p-2 font-mono text-sm">
+      {tex}
+    </code>
   );
 }
 
@@ -49,11 +41,10 @@ function MathHtml({ tex }: { tex: string }) {
  */
 function FormattedText({ text }: { text: string }) {
   const elements = useMemo(() => {
-    if (!text || (!text.includes("$") && !text.includes("\\("))) {
+    if (!text || (!text.includes("$") && !text.includes("\\(") && !text.includes("\\["))) {
       return text;
     }
 
-    // Matches $$...$$, $...$, \(...\), or \[...\]
     const regex = /(\$\$[\s\S]*?\$\$|\$(?:\\\$|[^\$])+?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g;
     const parts = text.split(regex);
 
@@ -89,7 +80,6 @@ function FormattedText({ text }: { text: string }) {
           macros: KATEX_MACROS,
         });
 
-
         if (isBlock) {
           return (
             <div
@@ -116,7 +106,7 @@ function FormattedText({ text }: { text: string }) {
   }, [text]);
 
   return (
-    <p dir="auto" className="whitespace-pre-wrap leading-relaxed text-foreground">
+    <p dir="auto" className="rv-text">
       {elements}
     </p>
   );
@@ -125,25 +115,31 @@ function FormattedText({ text }: { text: string }) {
 export interface RichViewProps {
   value: string | null | undefined;
   className?: string;
+  numbered?: boolean;
+  locale?: "ar" | "en";
 }
 
-export function RichView({ value, className = "" }: RichViewProps) {
+/** Read-only renderer for any stored value (plain string or envelope). `numbered` shows the step badges of the sheet. */
+export function RichView({ value, className, numbered = false, locale = "ar" }: RichViewProps) {
   const blocks = useMemo(() => parseRich(value).blocks, [value]);
+  const nf = useMemo(() => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en"), [locale]);
 
   if (blocks.length === 0) {
     return null;
   }
 
   return (
-    <div className={`rich-view space-y-2 ${className}`}>
-      {blocks.map((b, i) => {
-        if (b.t === "text") {
-          return <FormattedText key={i} text={b.v} />;
-        }
-
-        const tex = b.t === "chem" ? `\\ce{${b.v}}` : b.v;
-        return <MathHtml key={i} tex={tex} />;
-      })}
+    <div className={"rv" + (numbered ? " rv--numbered" : "") + (className ? ` ${className}` : "")}>
+      {blocks.map((b, i) => (
+        <div className="rv-row" key={i}>
+          {numbered && <span className="rv-badge">{nf.format(i + 1)}</span>}
+          {b.t === "text" ? (
+            <FormattedText text={b.v} />
+          ) : (
+            <MathHtml tex={b.t === "chem" ? `\\ce{${b.v}}` : b.v} />
+          )}
+        </div>
+      ))}
     </div>
   );
 }
