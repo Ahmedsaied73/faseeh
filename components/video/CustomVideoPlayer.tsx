@@ -138,8 +138,9 @@ export function CustomVideoPlayer({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [menuView, setMenuView] = useState<'main' | 'quality' | 'speed'>('main');
 
-  // Progress bar hover state
+  // Progress bar hover/drag state
   const [isProgressHovered, setIsProgressHovered] = useState(false);
+  const [hoverPercent, setHoverPercent] = useState<number | null>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
 
@@ -321,6 +322,21 @@ export function CustomVideoPlayer({
     };
   }, []);
 
+  // Smooth 60fps progress bar sync while playing (timeupdate only fires ~4Hz)
+  useEffect(() => {
+    if (!isPlaying) return;
+    let rafId = 0;
+    const tick = () => {
+      const video = videoRef.current;
+      if (video && !isDraggingRef.current) {
+        setCurrentTime(video.currentTime);
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [isPlaying]);
+
   // ─────────────────────────────────────────────────────────────────────────────
   // 2b. Flush Video Telemetry Once on pagehide / unmount
   // ─────────────────────────────────────────────────────────────────────────────
@@ -374,14 +390,6 @@ export function CustomVideoPlayer({
     }
   }, []);
 
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const video = videoRef.current;
-    if (!video) return;
-    const seekTo = Number(e.target.value);
-    video.currentTime = seekTo;
-    setCurrentTime(seekTo);
-  };
-
   const toggleMute = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -426,18 +434,27 @@ export function CustomVideoPlayer({
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Progress bar pointer handling (Bunny-style)
+  // Progress bar pointer handling (Bunny/Plyr-style)
   // ─────────────────────────────────────────────────────────────────────────────
-  const seekFromPointer = useCallback((clientX: number) => {
+  const getPointerPercent = useCallback((clientX: number): number => {
     const bar = progressBarRef.current;
-    const video = videoRef.current;
-    if (!bar || !video || !video.duration) return;
+    if (!bar) return 0;
     const rect = bar.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const seekTo = pct * video.duration;
-    video.currentTime = seekTo;
-    setCurrentTime(seekTo);
+    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
   }, []);
+
+  const seekFromPointer = useCallback(
+    (clientX: number) => {
+      const video = videoRef.current;
+      const pct = getPointerPercent(clientX);
+      setHoverPercent(pct * 100);
+      if (!video || !video.duration) return;
+      const seekTo = pct * video.duration;
+      video.currentTime = seekTo;
+      setCurrentTime(seekTo);
+    },
+    [getPointerPercent],
+  );
 
   const handleProgressPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -450,10 +467,13 @@ export function CustomVideoPlayer({
 
   const handleProgressPointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!isDraggingRef.current) return;
-      seekFromPointer(e.clientX);
+      if (isDraggingRef.current) {
+        seekFromPointer(e.clientX);
+        return;
+      }
+      setHoverPercent(getPointerPercent(e.clientX) * 100);
     },
-    [seekFromPointer],
+    [getPointerPercent, seekFromPointer],
   );
 
   const handleProgressPointerUp = useCallback(
@@ -609,11 +629,11 @@ export function CustomVideoPlayer({
 
       {/* ── Bottom Controls Bar Overlay ── */}
       <div
-        className={`absolute inset-x-0 bottom-0 transition-opacity duration-300 ${
+        className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pb-2.5 pt-10 transition-opacity duration-300 sm:px-4 ${
           showControls || !isPlaying || isSettingsOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
       >
-        {/* ── Bunny-style Progress Bar ── */}
+        {/* ── Bunny/Plyr-style Progress Bar ── */}
         <div
           ref={progressBarRef}
           role="slider"
@@ -622,12 +642,17 @@ export function CustomVideoPlayer({
           aria-valuemin={0}
           aria-valuemax={Math.round(duration) || 100}
           tabIndex={0}
-          className="group/bar relative mx-0 cursor-pointer px-0 pb-0 pt-3"
+          className="relative mb-1.5 flex h-5 w-full cursor-pointer touch-none items-center select-none focus:outline-none"
           onPointerDown={handleProgressPointerDown}
           onPointerMove={handleProgressPointerMove}
           onPointerUp={handleProgressPointerUp}
-          onMouseEnter={() => setIsProgressHovered(true)}
-          onMouseLeave={() => { if (!isDraggingRef.current) setIsProgressHovered(false); }}
+          onPointerEnter={() => setIsProgressHovered(true)}
+          onPointerLeave={() => {
+            if (!isDraggingRef.current) {
+              setIsProgressHovered(false);
+              setHoverPercent(null);
+            }
+          }}
           onKeyDown={(e) => {
             const video = videoRef.current;
             if (!video) return;
@@ -635,40 +660,60 @@ export function CustomVideoPlayer({
             if (e.key === 'ArrowLeft') video.currentTime = Math.max(0, video.currentTime - 5);
           }}
         >
-          {/* Rail */}
+          {/* Floating hover time tooltip */}
+          {isProgressHovered && hoverPercent !== null && duration > 0 && (
+            <div
+              className="pointer-events-none absolute -top-7 -translate-x-1/2 rounded bg-black/90 px-2 py-0.5 font-mono text-xs font-medium tabular-nums text-white shadow-lg ring-1 ring-white/10"
+              style={{ left: `clamp(24px, ${hoverPercent}%, calc(100% - 24px))` }}
+            >
+              {formatTime((hoverPercent / 100) * duration)}
+            </div>
+          )}
+
+          {/* Rail (thumb is positioned relative to THIS element so it is always dead-center) */}
           <div
-            className="relative w-full overflow-hidden rounded-full bg-white/25 transition-all duration-150"
-            style={{ height: isProgressHovered || isDraggingRef.current ? '5px' : '3px' }}
+            className="relative w-full rounded-full bg-white/25 transition-[height] duration-150 ease-out"
+            style={{ height: isProgressHovered || isDraggingRef.current ? '6px' : '4px' }}
           >
-            {/* Buffered */}
+            {/* Inner clipped track */}
+            <div className="absolute inset-0 overflow-hidden rounded-full">
+              {/* Buffered */}
+              <div
+                className="absolute inset-y-0 left-0 bg-white/30"
+                style={{ width: `${bufferedPercent}%` }}
+              />
+              {/* Hover preview ghost bar */}
+              {isProgressHovered && hoverPercent !== null && (
+                <div
+                  className="absolute inset-y-0 left-0 bg-white/25"
+                  style={{ width: `${hoverPercent}%` }}
+                />
+              )}
+              {/* Played — platform accent */}
+              <div
+                className="absolute inset-y-0 left-0"
+                style={{
+                  width: `${duration ? (currentTime / duration) * 100 : 0}%`,
+                  backgroundColor: 'var(--color-brand-primary)',
+                }}
+              />
+            </div>
+
+            {/* Scrub thumb — dead-center on the rail, smooth scale on hover/drag */}
             <div
-              className="absolute inset-y-0 left-0 rounded-full bg-white/40"
-              style={{ width: `${bufferedPercent}%` }}
-            />
-            {/* Played — brand accent */}
-            <div
-              className="absolute inset-y-0 left-0 rounded-full"
+              className="pointer-events-none absolute top-1/2 rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.55)] transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]"
               style={{
-                width: `${duration ? (currentTime / duration) * 100 : 0}%`,
-                backgroundColor: 'var(--color-brand-primary)',
+                left: `${duration ? (currentTime / duration) * 100 : 0}%`,
+                width: '13px',
+                height: '13px',
+                transform: `translate(-50%, -50%) scale(${isProgressHovered || isDraggingRef.current ? 1 : 0})`,
               }}
             />
           </div>
-          {/* Scrub thumb — only visible on hover/drag */}
-          <div
-            className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full shadow-md transition-all duration-150"
-            style={{
-              left: `${duration ? (currentTime / duration) * 100 : 0}%`,
-              width: isProgressHovered || isDraggingRef.current ? '14px' : '0px',
-              height: isProgressHovered || isDraggingRef.current ? '14px' : '0px',
-              backgroundColor: 'var(--color-brand-primary)',
-              opacity: isProgressHovered || isDraggingRef.current ? 1 : 0,
-            }}
-          />
         </div>
 
-        {/* Controls row — sits on gradient */}
-        <div className="bg-gradient-to-t from-black/85 via-black/50 to-transparent px-3 pb-3 pt-1">
+        {/* Controls row */}
+        <div>
           <div className="flex items-center justify-between text-xs sm:text-sm">
           {/* Left Controls: Play, Volume, Time */}
           <div className="flex items-center gap-3">
@@ -702,7 +747,7 @@ export function CustomVideoPlayer({
             </div>
 
             {/* Time display */}
-            <div className="font-mono text-xs text-white/80">
+            <div className="font-mono text-xs tabular-nums text-white/80">
               <span>{formatTime(currentTime)}</span>
               <span className="mx-1 text-white/40">/</span>
               <span>{formatTime(duration)}</span>
