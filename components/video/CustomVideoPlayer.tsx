@@ -10,7 +10,6 @@ import {
   Maximize,
   Minimize,
   Settings,
-  RotateCcw,
   Check,
   Loader2,
   ChevronRight,
@@ -138,6 +137,11 @@ export function CustomVideoPlayer({
   // Settings menu state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [menuView, setMenuView] = useState<'main' | 'quality' | 'speed'>('main');
+
+  // Progress bar hover state
+  const [isProgressHovered, setIsProgressHovered] = useState(false);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 1. Initialize HLS Stream & Set Default 480p Quality
@@ -421,6 +425,46 @@ export function CustomVideoPlayer({
     setIsSettingsOpen(false);
   };
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Progress bar pointer handling (Bunny-style)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const seekFromPointer = useCallback((clientX: number) => {
+    const bar = progressBarRef.current;
+    const video = videoRef.current;
+    if (!bar || !video || !video.duration) return;
+    const rect = bar.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const seekTo = pct * video.duration;
+    video.currentTime = seekTo;
+    setCurrentTime(seekTo);
+  }, []);
+
+  const handleProgressPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      isDraggingRef.current = true;
+      seekFromPointer(e.clientX);
+    },
+    [seekFromPointer],
+  );
+
+  const handleProgressPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isDraggingRef.current) return;
+      seekFromPointer(e.clientX);
+    },
+    [seekFromPointer],
+  );
+
+  const handleProgressPointerUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      seekFromPointer(e.clientX);
+    },
+    [seekFromPointer],
+  );
+
   const toggleFullscreen = () => {
     const container = containerRef.current;
     if (!container) return;
@@ -565,36 +609,67 @@ export function CustomVideoPlayer({
 
       {/* ── Bottom Controls Bar Overlay ── */}
       <div
-        className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-8 transition-opacity duration-300 ${
+        className={`absolute inset-x-0 bottom-0 transition-opacity duration-300 ${
           showControls || !isPlaying || isSettingsOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
       >
-        {/* Scrubbing Progress Bar */}
-        <div className="relative mb-2 flex items-center">
-          {/* Buffer track */}
+        {/* ── Bunny-style Progress Bar ── */}
+        <div
+          ref={progressBarRef}
+          role="slider"
+          aria-label="شريط تقدم الفيديو"
+          aria-valuenow={Math.round(currentTime)}
+          aria-valuemin={0}
+          aria-valuemax={Math.round(duration) || 100}
+          tabIndex={0}
+          className="group/bar relative mx-0 cursor-pointer px-0 pb-0 pt-3"
+          onPointerDown={handleProgressPointerDown}
+          onPointerMove={handleProgressPointerMove}
+          onPointerUp={handleProgressPointerUp}
+          onMouseEnter={() => setIsProgressHovered(true)}
+          onMouseLeave={() => { if (!isDraggingRef.current) setIsProgressHovered(false); }}
+          onKeyDown={(e) => {
+            const video = videoRef.current;
+            if (!video) return;
+            if (e.key === 'ArrowRight') video.currentTime = Math.min(video.duration, video.currentTime + 5);
+            if (e.key === 'ArrowLeft') video.currentTime = Math.max(0, video.currentTime - 5);
+          }}
+        >
+          {/* Rail */}
           <div
-            className="pointer-events-none absolute left-0 h-1.5 rounded-full bg-white/20 transition-all"
-            style={{ width: `${bufferedPercent}%` }}
-          />
-          {/* Active played track */}
+            className="relative w-full overflow-hidden rounded-full bg-white/25 transition-all duration-150"
+            style={{ height: isProgressHovered || isDraggingRef.current ? '5px' : '3px' }}
+          >
+            {/* Buffered */}
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-white/40"
+              style={{ width: `${bufferedPercent}%` }}
+            />
+            {/* Played — brand accent */}
+            <div
+              className="absolute inset-y-0 left-0 rounded-full"
+              style={{
+                width: `${duration ? (currentTime / duration) * 100 : 0}%`,
+                backgroundColor: 'var(--color-brand-primary)',
+              }}
+            />
+          </div>
+          {/* Scrub thumb — only visible on hover/drag */}
           <div
-            className="pointer-events-none absolute left-0 h-1.5 rounded-full bg-brand-primary transition-all"
-            style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
-          />
-          <input
-            type="range"
-            min={0}
-            max={duration || 100}
-            step={0.1}
-            value={currentTime}
-            onChange={handleSeek}
-            aria-label="شريط تقدم الفيديو"
-            className="relative z-10 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-transparent accent-brand-primary focus:outline-hidden"
+            className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full shadow-md transition-all duration-150"
+            style={{
+              left: `${duration ? (currentTime / duration) * 100 : 0}%`,
+              width: isProgressHovered || isDraggingRef.current ? '14px' : '0px',
+              height: isProgressHovered || isDraggingRef.current ? '14px' : '0px',
+              backgroundColor: 'var(--color-brand-primary)',
+              opacity: isProgressHovered || isDraggingRef.current ? 1 : 0,
+            }}
           />
         </div>
 
-        {/* Action Controls Row */}
-        <div className="flex items-center justify-between text-xs sm:text-sm">
+        {/* Controls row — sits on gradient */}
+        <div className="bg-gradient-to-t from-black/85 via-black/50 to-transparent px-3 pb-3 pt-1">
+          <div className="flex items-center justify-between text-xs sm:text-sm">
           {/* Left Controls: Play, Volume, Time */}
           <div className="flex items-center gap-3">
             <button
@@ -794,6 +869,7 @@ export function CustomVideoPlayer({
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
     </div>
