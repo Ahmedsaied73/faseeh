@@ -604,7 +604,7 @@ export function CustomVideoPlayer({
       ref={containerRef}
       onMouseMove={resetControlsTimeout}
       onMouseEnter={() => setShowControls(true)}
-      className={`group relative aspect-video w-full select-none overflow-hidden bg-black text-white ${className}`}
+      className={`group relative aspect-video w-full select-none overflow-hidden bg-black text-white ${isFullscreen ? '' : 'rounded-2xl'} ${className}`}
       dir="ltr"
     >
       {/* ── Native HTML5 Video Element ── */}
@@ -674,7 +674,7 @@ export function CustomVideoPlayer({
           {/* Floating hover time tooltip */}
           {isProgressHovered && hoverPercent !== null && duration > 0 && (
             <div
-              className="pointer-events-none absolute -top-7 -translate-x-1/2 rounded bg-black/90 px-2 py-0.5 font-mono text-xs font-medium tabular-nums text-white shadow-lg ring-1 ring-white/10"
+              className="pointer-events-none absolute -top-7 -translate-x-1/2 rounded-lg bg-black/90 px-2 py-0.5 font-mono text-xs font-medium tabular-nums text-white shadow-lg ring-1 ring-white/10"
               style={{ left: `clamp(24px, ${hoverPercent}%, calc(100% - 24px))` }}
             >
               {formatTime((hoverPercent / 100) * duration)}
@@ -730,7 +730,7 @@ export function CustomVideoPlayer({
             <button
               onClick={togglePlay}
               aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'}
-              className="rounded-[4px] p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)]"
+              className="rounded-lg p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)]"
             >
               {isPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}
             </button>
@@ -742,7 +742,7 @@ export function CustomVideoPlayer({
               }}
               aria-label="ترجيع 10 ثوانٍ"
               title="ترجيع 10 ثوانٍ"
-              className="rounded-[4px] p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)] active:scale-95"
+              className="rounded-lg p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)] active:scale-95"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
@@ -758,7 +758,7 @@ export function CustomVideoPlayer({
               }}
               aria-label="تقديم 10 ثوانٍ"
               title="تقديم 10 ثوانٍ"
-              className="rounded-[4px] p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)] active:scale-95"
+              className="rounded-lg p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)] active:scale-95"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
@@ -782,7 +782,7 @@ export function CustomVideoPlayer({
               <button
                 onClick={toggleMute}
                 aria-label={isMuted ? 'إلغاء كتم الصوت' : 'كتم الصوت'}
-                className="rounded-[4px] p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)]"
+                className="rounded-lg p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)]"
               >
                 {isMuted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
               </button>
@@ -851,7 +851,7 @@ export function CustomVideoPlayer({
                 setIsSettingsOpen(!isSettingsOpen);
               }}
               aria-label="إعدادات التشغيل"
-              className="rounded-[4px] p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)]"
+              className="rounded-lg p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)]"
               style={isSettingsOpen ? { backgroundColor: 'var(--color-brand-accent)' } : undefined}
             >
               <Settings className="h-5 w-5" />
@@ -861,7 +861,7 @@ export function CustomVideoPlayer({
             <button
               onClick={toggleFullscreen}
               aria-label={isFullscreen ? 'تصغير الشاشة' : 'تكبير الشاشة'}
-              className="rounded-[4px] p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)]"
+              className="rounded-lg p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)]"
             >
               {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
             </button>
@@ -870,17 +870,17 @@ export function CustomVideoPlayer({
             {isSettingsOpen && (
               <div
                 dir="rtl"
-                className="absolute bottom-11 right-0 z-50 w-56 rounded-[4px] bg-white p-1.5 text-xs font-semibold text-[#4a5464] shadow-[0_1px_10px_rgba(0,0,0,0.22)]"
+                className="absolute bottom-12 right-0 z-50 w-56 rounded-xl bg-white p-1.5 text-xs font-semibold text-[#4a5464] shadow-[0_4px_20px_rgba(0,0,0,0.22)]"
               >
                 {/* Bottom pointer caret over the gear icon */}
-                <span className="pointer-events-none absolute -bottom-1 right-9 h-2.5 w-2.5 rotate-45 bg-white" />
+                <span className="pointer-events-none absolute -bottom-1 right-9 h-2.5 w-2.5 rotate-45 rounded-[2px] bg-white" />
 
                 {/* View 1: Main Settings Menu */}
                 {menuView === 'main' && (
                   <div className="space-y-0.5">
                     <button
                       onClick={() => setMenuView('quality')}
-                      className="group/item flex w-full items-center justify-between rounded-[3px] px-2.5 py-2 text-right transition-colors hover:bg-[var(--color-brand-accent)] hover:text-white"
+                      className="group/item flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-right transition-colors hover:bg-[var(--color-brand-accent)] hover:text-white"
                     >
                       <span>الجودة</span>
                       <span className="flex items-center gap-1 text-[#677282] group-hover/item:text-white">
@@ -891,7 +891,7 @@ export function CustomVideoPlayer({
 
                     <button
                       onClick={() => setMenuView('speed')}
-                      className="group/item flex w-full items-center justify-between rounded-[3px] px-2.5 py-2 text-right transition-colors hover:bg-[var(--color-brand-accent)] hover:text-white"
+                      className="group/item flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-right transition-colors hover:bg-[var(--color-brand-accent)] hover:text-white"
                     >
                       <span>سرعة التشغيل</span>
                       <span className="flex items-center gap-1 text-[#677282] group-hover/item:text-white">
@@ -921,7 +921,7 @@ export function CustomVideoPlayer({
                           <button
                             key={opt.index}
                             onClick={() => handleSelectQuality(opt.index)}
-                            className="group/item flex w-full items-center justify-between rounded-[3px] px-2.5 py-2 text-right transition-colors hover:bg-[var(--color-brand-accent)] hover:text-white"
+                            className="group/item flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-right transition-colors hover:bg-[var(--color-brand-accent)] hover:text-white"
                           >
                             <span className="flex items-center gap-2">
                               <span
@@ -935,7 +935,7 @@ export function CustomVideoPlayer({
                               <span>{opt.label}</span>
                             </span>
                             {badge && (
-                              <span className="rounded-[2px] bg-[#4a5464] px-1.5 py-0.5 text-xs leading-none font-bold text-white group-hover/item:bg-white group-hover/item:text-[var(--color-brand-accent)]">
+                              <span className="rounded-md bg-[#4a5464] px-1.5 py-0.5 text-xs leading-none font-bold text-white group-hover/item:bg-white group-hover/item:text-[var(--color-brand-accent)]">
                                 {badge}
                               </span>
                             )}
@@ -964,7 +964,7 @@ export function CustomVideoPlayer({
                           <button
                             key={spd}
                             onClick={() => handleSelectSpeed(spd)}
-                            className="group/item flex w-full items-center gap-2 rounded-[3px] px-2.5 py-2 text-right transition-colors hover:bg-[var(--color-brand-accent)] hover:text-white"
+                            className="group/item flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-right transition-colors hover:bg-[var(--color-brand-accent)] hover:text-white"
                           >
                             <span
                               className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full ${
