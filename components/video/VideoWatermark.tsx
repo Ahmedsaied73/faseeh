@@ -406,11 +406,11 @@ export function VideoWatermark({
             ref={primaryPillRef}
             className="animate-watermark-drift inline-flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm backdrop-blur-[0.5px]"
             style={{
-              color: 'var(--color-brand-secondary, #90BAE9)',
-              borderColor: 'rgba(144, 186, 233, 0.28)',
-              backgroundColor: 'rgba(11, 17, 25, 0.32)',
-              opacity: 0.28,
-              textShadow: '0 1px 2px rgba(0, 0, 0, 0.9)',
+              color: 'var(--color-brand-primary, #4685CE)',
+              borderColor: 'color-mix(in srgb, var(--color-brand-primary, #4685CE) 55%, transparent)',
+              backgroundColor: 'color-mix(in srgb, var(--color-brand-primary, #4685CE) 14%, rgba(11, 17, 25, 0.35))',
+              opacity: 0.58,
+              textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
             }}
           >
             {name && (
@@ -448,9 +448,9 @@ export function VideoWatermark({
               ref={ghostPillRef}
               className="animate-watermark-ghost px-2 py-0.5 rounded font-mono text-[10px] sm:text-xs font-semibold whitespace-nowrap tabular-nums tracking-widest"
               style={{
-                color: 'var(--color-brand-secondary, #90BAE9)',
-                opacity: 0.14,
-                textShadow: '0 1px 2px rgba(0, 0, 0, 0.85)',
+                color: 'var(--color-brand-primary, #4685CE)',
+                opacity: 0.28,
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.35)',
               }}
             >
               <bdi dir="ltr">{phone || primaryIdentifier}</bdi>
