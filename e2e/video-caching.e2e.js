@@ -487,8 +487,10 @@ async function run() {
     await waitForPlaying(page);
     await sleep(500); // allow async IDB putSegment to settle
     assert.ok(state.tsRequests.length >= 1, 'Scenario 2 failed: expected .ts requests on cold play');
-    const qualityText = await page.locator('button[title="تغيير جودة الفيديو"]').innerText();
+    await page.locator('button[aria-label="إعدادات التشغيل"]').click();
+    const qualityText = await page.locator('button:has-text("الجودة")').innerText();
     assert.ok(qualityText.includes('480p'), `Scenario 2 failed: expected 480p quality, got ${qualityText}`);
+    await page.locator('button[aria-label="إعدادات التشغيل"]').click();
 
     const cachedKeys = await readIdbSegments(page);
     assert.ok(cachedKeys.length >= 1, 'Scenario 2 failed: expected >= 1 cached segment in IDB');

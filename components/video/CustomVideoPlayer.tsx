@@ -10,11 +10,8 @@ import {
   Maximize,
   Minimize,
   Settings,
-  Check,
   Loader2,
   ChevronRight,
-  Gauge,
-  Sliders,
 } from 'lucide-react';
 import { VideoWatermark } from './VideoWatermark';
 import { API_BASE_URL } from '@/lib/api-client';
@@ -138,11 +135,13 @@ export function CustomVideoPlayer({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [menuView, setMenuView] = useState<'main' | 'quality' | 'speed'>('main');
 
-  // Progress bar hover/drag state
+  // Progress bar & volume slider state
   const [isProgressHovered, setIsProgressHovered] = useState(false);
   const [hoverPercent, setHoverPercent] = useState<number | null>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
+  const volumeBarRef = useRef<HTMLDivElement>(null);
+  const isDraggingVolumeRef = useRef(false);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 1. Initialize HLS Stream & Set Default 480p Quality
@@ -406,15 +405,17 @@ export function CustomVideoPlayer({
     setIsMuted(video.muted);
   };
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const setVolumeFromPointer = useCallback((clientX: number) => {
+    const bar = volumeBarRef.current;
     const video = videoRef.current;
-    if (!video) return;
-    const val = Number(e.target.value);
+    if (!bar || !video) return;
+    const rect = bar.getBoundingClientRect();
+    const val = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     video.volume = val;
     video.muted = val === 0;
     setVolume(val);
     setIsMuted(val === 0);
-  };
+  }, []);
 
   const handleSelectQuality = (index: number) => {
     const hls = hlsRef.current;
@@ -621,18 +622,19 @@ export function CustomVideoPlayer({
       {/* ── Buffering Spinner ── */}
       {isBuffering && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/30 backdrop-blur-xs">
-          <Loader2 className="h-12 w-12 animate-spin text-brand-primary" />
+          <Loader2 className="h-12 w-12 animate-spin" style={{ color: 'var(--color-brand-accent)' }} />
         </div>
       )}
 
-      {/* ── Big Center Play Button (When Paused) ── */}
+      {/* ── Center Play Button (Bunny/Plyr Style) ── */}
       {!isPlaying && !isBuffering && (
         <button
           onClick={togglePlay}
           aria-label="تشغيل"
-          className="absolute inset-0 m-auto flex h-18 w-18 items-center justify-center rounded-full bg-brand-primary/90 text-white shadow-2xl transition hover:scale-110 hover:bg-brand-primary"
+          className="absolute inset-0 m-auto flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-transform duration-150 hover:scale-110 active:scale-95"
+          style={{ backgroundColor: 'var(--color-brand-accent)' }}
         >
-          <Play className="ml-1 h-9 w-9 fill-current" />
+          <Play className="ml-0.5 h-6 w-6 fill-current" />
         </button>
       )}
 
@@ -722,14 +724,13 @@ export function CustomVideoPlayer({
         </div>
 
         {/* Controls row */}
-        <div>
-          <div className="flex items-center justify-between text-xs sm:text-sm">
-          {/* Left Controls: Play, Skip ±10s, Volume, Time */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
+        <div className="flex items-center justify-between text-xs sm:text-sm">
+          {/* Left Controls: Play, Skip -10s, Skip +10s */}
+          <div className="flex items-center gap-1 sm:gap-1.5">
             <button
               onClick={togglePlay}
               aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'}
-              className="rounded-lg p-1.5 text-white/90 hover:bg-white/20 hover:text-white"
+              className="rounded-[4px] p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)]"
             >
               {isPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}
             </button>
@@ -741,7 +742,7 @@ export function CustomVideoPlayer({
               }}
               aria-label="ترجيع 10 ثوانٍ"
               title="ترجيع 10 ثوانٍ"
-              className="rounded-lg p-1.5 text-white/90 transition hover:bg-white/20 hover:text-white active:scale-95"
+              className="rounded-[4px] p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)] active:scale-95"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
@@ -757,7 +758,7 @@ export function CustomVideoPlayer({
               }}
               aria-label="تقديم 10 ثوانٍ"
               title="تقديم 10 ثوانٍ"
-              className="rounded-lg p-1.5 text-white/90 transition hover:bg-white/20 hover:text-white active:scale-95"
+              className="rounded-[4px] p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)] active:scale-95"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
@@ -765,50 +766,83 @@ export function CustomVideoPlayer({
                 <text x="12" y="15.5" textAnchor="middle" fill="currentColor" stroke="none" fontSize="7.5" fontWeight="700" fontFamily="system-ui, sans-serif">10</text>
               </svg>
             </button>
+          </div>
 
-            {/* Volume control */}
+          {/* Right Controls: Time, Volume, Settings, Fullscreen */}
+          <div className="relative flex items-center gap-1.5 sm:gap-2">
+            {/* Time display */}
+            <div className="mr-1 font-mono text-xs font-semibold tabular-nums text-white">
+              <span>{formatTime(currentTime)}</span>
+              <span className="mx-1 text-white/60">/</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+
+            {/* Volume control (Plyr pill slider) */}
             <div className="flex items-center gap-1.5">
               <button
                 onClick={toggleMute}
                 aria-label={isMuted ? 'إلغاء كتم الصوت' : 'كتم الصوت'}
-                className="rounded-lg p-1.5 text-white/90 hover:bg-white/20 hover:text-white"
+                className="rounded-[4px] p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)]"
               >
                 {isMuted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
               </button>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={isMuted ? 0 : volume}
-                onChange={handleVolumeChange}
+              <div
+                ref={volumeBarRef}
+                role="slider"
                 aria-label="مستوى الصوت"
-                className="h-1.5 w-14 cursor-pointer accent-brand-accent sm:w-20"
-              />
+                aria-valuenow={Math.round((isMuted ? 0 : volume) * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                tabIndex={0}
+                className="relative flex h-5 w-14 cursor-pointer touch-none items-center sm:w-20 focus:outline-none"
+                onPointerDown={(e) => {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  isDraggingVolumeRef.current = true;
+                  setVolumeFromPointer(e.clientX);
+                }}
+                onPointerMove={(e) => {
+                  if (isDraggingVolumeRef.current) setVolumeFromPointer(e.clientX);
+                }}
+                onPointerUp={(e) => {
+                  if (!isDraggingVolumeRef.current) return;
+                  isDraggingVolumeRef.current = false;
+                  setVolumeFromPointer(e.clientX);
+                }}
+                onKeyDown={(e) => {
+                  const video = videoRef.current;
+                  if (!video) return;
+                  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const next = Math.min(1, video.volume + 0.1);
+                    video.volume = next;
+                    video.muted = false;
+                    setVolume(next);
+                    setIsMuted(false);
+                  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const next = Math.max(0, video.volume - 0.1);
+                    video.volume = next;
+                    video.muted = next === 0;
+                    setVolume(next);
+                    setIsMuted(next === 0);
+                  }
+                }}
+              >
+                <div className="relative h-1 w-full rounded-full bg-white/30">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full"
+                    style={{
+                      width: `${(isMuted ? 0 : volume) * 100}%`,
+                      backgroundColor: 'var(--color-brand-accent)',
+                    }}
+                  />
+                  <div
+                    className="pointer-events-none absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
+                    style={{ left: `${(isMuted ? 0 : volume) * 100}%` }}
+                  />
+                </div>
+              </div>
             </div>
-
-            {/* Time display */}
-            <div className="font-mono text-xs tabular-nums text-white/80">
-              <span>{formatTime(currentTime)}</span>
-              <span className="mx-1 text-white/40">/</span>
-              <span>{formatTime(duration)}</span>
-            </div>
-          </div>
-
-          {/* Right Controls: Quality Badge, Settings, Fullscreen */}
-          <div className="relative flex items-center gap-2">
-            {/* Active Quality Chip (Fast Indicator) */}
-            <button
-              onClick={() => {
-                setMenuView('quality');
-                setIsSettingsOpen(!isSettingsOpen);
-              }}
-              className="flex items-center gap-1 rounded-md bg-white/10 px-2 py-1 text-xs font-semibold text-white/90 transition hover:bg-white/20"
-              title="تغيير جودة الفيديو"
-            >
-              <Sliders className="h-3.5 w-3.5 text-brand-primary" />
-              <span>{activeQualityLabel.split(' ')[0]}</span>
-            </button>
 
             {/* Settings Button */}
             <button
@@ -817,9 +851,8 @@ export function CustomVideoPlayer({
                 setIsSettingsOpen(!isSettingsOpen);
               }}
               aria-label="إعدادات التشغيل"
-              className={`rounded-lg p-1.5 text-white/90 hover:bg-white/20 hover:text-white ${
-                isSettingsOpen ? 'bg-white/20 text-brand-primary' : ''
-              }`}
+              className="rounded-[4px] p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)]"
+              style={isSettingsOpen ? { backgroundColor: 'var(--color-brand-accent)' } : undefined}
             >
               <Settings className="h-5 w-5" />
             </button>
@@ -828,50 +861,43 @@ export function CustomVideoPlayer({
             <button
               onClick={toggleFullscreen}
               aria-label={isFullscreen ? 'تصغير الشاشة' : 'تكبير الشاشة'}
-              className="rounded-lg p-1.5 text-white/90 hover:bg-white/20 hover:text-white"
+              className="rounded-[4px] p-1.5 text-white transition-colors hover:bg-[var(--color-brand-accent)]"
             >
               {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
             </button>
 
-            {/* ── Settings Popover Menu (RTL Arabic) ── */}
+            {/* ── Plyr/Bunny White Settings Popover Menu ── */}
             {isSettingsOpen && (
               <div
                 dir="rtl"
-                className="absolute bottom-12 right-0 z-50 w-64 rounded-xl border border-white/15 bg-slate-900/95 p-2 text-sm text-white shadow-2xl backdrop-blur-md"
+                className="absolute bottom-11 right-0 z-50 w-56 rounded-[4px] bg-white p-1.5 text-xs font-semibold text-[#4a5464] shadow-[0_1px_10px_rgba(0,0,0,0.22)]"
               >
+                {/* Bottom pointer caret over the gear icon */}
+                <span className="pointer-events-none absolute -bottom-1 right-9 h-2.5 w-2.5 rotate-45 bg-white" />
+
                 {/* View 1: Main Settings Menu */}
                 {menuView === 'main' && (
-                  <div className="space-y-1">
-                    <div className="px-3 py-1.5 text-xs font-bold text-white/50">إعدادات الفيديو</div>
-
-                    {/* Quality submenu trigger */}
+                  <div className="space-y-0.5">
                     <button
                       onClick={() => setMenuView('quality')}
-                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-right transition hover:bg-white/10"
+                      className="group/item flex w-full items-center justify-between rounded-[3px] px-2.5 py-2 text-right transition-colors hover:bg-[var(--color-brand-accent)] hover:text-white"
                     >
-                      <div className="flex items-center gap-2">
-                        <Sliders className="h-4 w-4 text-brand-primary" />
-                        <span>الجودة</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-brand-muted">
-                        <span>{activeQualityLabel}</span>
-                        <ChevronRight className="h-4 w-4 rotate-180" />
-                      </div>
+                      <span>الجودة</span>
+                      <span className="flex items-center gap-1 text-[#677282] group-hover/item:text-white">
+                        <span>{activeQualityLabel.split(' ')[0]}</span>
+                        <ChevronRight className="h-3.5 w-3.5 rotate-180" />
+                      </span>
                     </button>
 
-                    {/* Speed submenu trigger */}
                     <button
                       onClick={() => setMenuView('speed')}
-                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-right transition hover:bg-white/10"
+                      className="group/item flex w-full items-center justify-between rounded-[3px] px-2.5 py-2 text-right transition-colors hover:bg-[var(--color-brand-accent)] hover:text-white"
                     >
-                      <div className="flex items-center gap-2">
-                        <Gauge className="h-4 w-4 text-brand-primary" />
-                        <span>سرعة التشغيل</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-brand-muted">
-                        <span>{playbackRate === 1 ? 'عادية (1x)' : `${playbackRate}x`}</span>
-                        <ChevronRight className="h-4 w-4 rotate-180" />
-                      </div>
+                      <span>سرعة التشغيل</span>
+                      <span className="flex items-center gap-1 text-[#677282] group-hover/item:text-white">
+                        <span>{playbackRate === 1 ? 'عادية' : `${playbackRate}x`}</span>
+                        <ChevronRight className="h-3.5 w-3.5 rotate-180" />
+                      </span>
                     </button>
                   </div>
                 )}
@@ -881,33 +907,37 @@ export function CustomVideoPlayer({
                   <div>
                     <button
                       onClick={() => setMenuView('main')}
-                      className="mb-1 flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold text-brand-primary hover:bg-white/10"
+                      className="mb-1 flex w-full items-center gap-1.5 border-b border-[#dcdfe3] px-2 py-1.5 font-bold text-[#4a5464] transition-colors hover:text-[var(--color-brand-accent)]"
                     >
-                      <ChevronRight className="h-4 w-4" />
-                      <span>العودة للقائمة</span>
+                      <ChevronRight className="h-3.5 w-3.5" />
+                      <span>الجودة</span>
                     </button>
 
-                    <div className="max-h-56 space-y-0.5 overflow-y-auto">
+                    <div className="max-h-52 space-y-0.5 overflow-y-auto">
                       {qualityOptions.map((opt) => {
                         const isSelected = currentQuality === opt.index;
+                        const badge = opt.height >= 720 ? 'HD' : opt.height === 480 ? 'SD' : null;
                         return (
                           <button
                             key={opt.index}
                             onClick={() => handleSelectQuality(opt.index)}
-                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-right text-xs transition ${
-                              isSelected ? 'bg-brand-primary/25 font-bold text-brand-primary' : 'hover:bg-white/10'
-                            }`}
+                            className="group/item flex w-full items-center justify-between rounded-[3px] px-2.5 py-2 text-right transition-colors hover:bg-[var(--color-brand-accent)] hover:text-white"
                           >
-                            <div className="flex items-center gap-2">
-                              {isSelected ? (
-                                <Check className="h-4 w-4 text-brand-primary" />
-                              ) : (
-                                <span className="w-4" />
-                              )}
+                            <span className="flex items-center gap-2">
+                              <span
+                                className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full ${
+                                  isSelected ? '' : 'bg-[#dcdfe3] group-hover/item:bg-white/40'
+                                }`}
+                                style={isSelected ? { backgroundColor: 'var(--color-brand-accent)' } : undefined}
+                              >
+                                {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                              </span>
                               <span>{opt.label}</span>
-                            </div>
-                            {opt.arabicNote && (
-                              <span className="text-[11px] text-white/50">{opt.arabicNote}</span>
+                            </span>
+                            {badge && (
+                              <span className="rounded-[2px] bg-[#4a5464] px-1.5 py-0.5 text-xs leading-none font-bold text-white group-hover/item:bg-white group-hover/item:text-[var(--color-brand-accent)]">
+                                {badge}
+                              </span>
                             )}
                           </button>
                         );
@@ -921,31 +951,30 @@ export function CustomVideoPlayer({
                   <div>
                     <button
                       onClick={() => setMenuView('main')}
-                      className="mb-1 flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold text-brand-primary hover:bg-white/10"
+                      className="mb-1 flex w-full items-center gap-1.5 border-b border-[#dcdfe3] px-2 py-1.5 font-bold text-[#4a5464] transition-colors hover:text-[var(--color-brand-accent)]"
                     >
-                      <ChevronRight className="h-4 w-4" />
-                      <span>العودة للقائمة</span>
+                      <ChevronRight className="h-3.5 w-3.5" />
+                      <span>سرعة التشغيل</span>
                     </button>
 
-                    <div className="space-y-0.5">
+                    <div className="max-h-52 space-y-0.5 overflow-y-auto">
                       {SPEED_OPTIONS.map((spd) => {
                         const isSelected = playbackRate === spd;
                         return (
                           <button
                             key={spd}
                             onClick={() => handleSelectSpeed(spd)}
-                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-right text-xs transition ${
-                              isSelected ? 'bg-brand-primary/25 font-bold text-brand-primary' : 'hover:bg-white/10'
-                            }`}
+                            className="group/item flex w-full items-center gap-2 rounded-[3px] px-2.5 py-2 text-right transition-colors hover:bg-[var(--color-brand-accent)] hover:text-white"
                           >
-                            <div className="flex items-center gap-2">
-                              {isSelected ? (
-                                <Check className="h-4 w-4 text-brand-primary" />
-                              ) : (
-                                <span className="w-4" />
-                              )}
-                              <span>{spd === 1 ? 'عادية (1x)' : `${spd}x`}</span>
-                            </div>
+                            <span
+                              className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full ${
+                                isSelected ? '' : 'bg-[#dcdfe3] group-hover/item:bg-white/40'
+                              }`}
+                              style={isSelected ? { backgroundColor: 'var(--color-brand-accent)' } : undefined}
+                            >
+                              {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                            </span>
+                            <span>{spd === 1 ? 'عادية' : `${spd}x`}</span>
                           </button>
                         );
                       })}
@@ -955,7 +984,6 @@ export function CustomVideoPlayer({
               </div>
             )}
           </div>
-        </div>
         </div>
       </div>
     </div>
