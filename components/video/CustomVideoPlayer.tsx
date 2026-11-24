@@ -18,12 +18,55 @@ import {
   Sliders,
 } from 'lucide-react';
 import { VideoWatermark } from './VideoWatermark';
+import { API_BASE_URL } from '@/lib/api-client';
+import { createCachedFragmentLoader, type CachedLoaderTelemetry } from '@/lib/hls-cached-loader';
+import type { BunnyCacheConfig } from '@/types/bunny';
+
+export interface VideoTelemetryPayload extends CachedLoaderTelemetry {
+  videoSlug: string;
+  playerMode: 'hls' | 'iframe';
+  deviceClass: 'mobile' | 'tablet' | 'desktop';
+  cacheEnabled: boolean;
+  ttffMs: number | null;
+  fallbackReason: string | null;
+}
+
+export function detectDeviceClass(): 'mobile' | 'tablet' | 'desktop' {
+  if (typeof navigator === 'undefined') return 'desktop';
+  const ua = navigator.userAgent;
+  if (/iPad|Tablet|PlayBook|Silk/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua))) {
+    return 'tablet';
+  }
+  if (/Mobi|Android|iPhone|iPod/i.test(ua)) {
+    return 'mobile';
+  }
+  return 'desktop';
+}
+
+export function flushVideoTelemetry(payload: VideoTelemetryPayload): void {
+  if (typeof window === 'undefined' || !payload.videoSlug) return;
+  try {
+    fetch(`${API_BASE_URL}/videos/telemetry`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+      credentials: 'include',
+    }).catch(() => {});
+  } catch {
+    // Ignore telemetry errors
+  }
+}
 
 export interface CustomVideoPlayerProps {
   hlsUrl: string;
   playbackUrlFallback?: string;
   title?: string;
+  videoId?: string;
+  videoSlug?: string;
+  cacheConfig?: BunnyCacheConfig;
   onFallbackToIframe?: () => void;
+  onTelemetryFlush?: (data: VideoTelemetryPayload) => void;
   className?: string;
 }
 
@@ -51,13 +94,29 @@ export function CustomVideoPlayer({
   hlsUrl,
   playbackUrlFallback,
   title,
+  videoId,
+  videoSlug,
+  cacheConfig,
   onFallbackToIframe,
+  onTelemetryFlush,
   className = '',
 }: CustomVideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasStartedLoadRef = useRef(false);
+  const playClickedAtRef = useRef<number | null>(null);
+  const ttffMsRef = useRef<number | null>(null);
+  const fallbackReasonRef = useRef<string | null>(null);
+  const telemetryFlushedRef = useRef(false);
+  const loaderTelemetryRef = useRef<CachedLoaderTelemetry>({
+    segmentHits: 0,
+    segmentMisses: 0,
+    bytesFromCache: 0,
+    bytesFromNetwork: 0,
+    idbErrors: 0,
+  });
 
   // Playback states
   const [isPlaying, setIsPlaying] = useState(false);
@@ -88,12 +147,27 @@ export function CustomVideoPlayer({
     if (!video || !hlsUrl) return;
 
     let hls: Hls | null = null;
+    hasStartedLoadRef.current = false;
 
     if (Hls.isSupported()) {
+      const cacheEnabled = Boolean(cacheConfig?.enabled && videoId);
       hls = new Hls({
         capLevelToPlayerSize: false,
-        autoStartLoad: true,
+        autoStartLoad: false,
+        maxBufferLength: 20,
+        maxMaxBufferLength: 45,
+        backBufferLength: 60,
         enableWorker: true,
+        ...(cacheEnabled && videoId
+          ? {
+              fLoader: createCachedFragmentLoader({
+                videoId,
+                maxBudgetMb: cacheConfig?.maxBudgetMb,
+                ttlDays: cacheConfig?.ttlDays,
+                telemetry: loaderTelemetryRef.current,
+              }),
+            }
+          : {}),
       });
       hlsRef.current = hls;
 
@@ -170,6 +244,7 @@ export function CustomVideoPlayer({
               break;
             default:
               // Fatal non-recoverable error -> fallback to iframe
+              fallbackReasonRef.current = data.details || data.type;
               hls?.destroy();
               if (onFallbackToIframe) {
                 onFallbackToIframe();
@@ -186,6 +261,7 @@ export function CustomVideoPlayer({
       });
     } else {
       // Neither supported -> fallback
+      fallbackReasonRef.current = 'hls_unsupported';
       if (onFallbackToIframe) onFallbackToIframe();
     }
 
@@ -195,7 +271,7 @@ export function CustomVideoPlayer({
         hlsRef.current = null;
       }
     };
-  }, [hlsUrl, onFallbackToIframe]);
+  }, [hlsUrl, videoId, cacheConfig?.enabled, cacheConfig?.maxBudgetMb, cacheConfig?.ttlDays, onFallbackToIframe]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 2. Video Events Listeners
@@ -220,6 +296,9 @@ export function CustomVideoPlayer({
     const handlePlaying = () => {
       setIsBuffering(false);
       setIsPlaying(true);
+      if (playClickedAtRef.current !== null && ttffMsRef.current === null) {
+        ttffMsRef.current = Math.round(performance.now() - playClickedAtRef.current);
+      }
     };
     const handlePause = () => setIsPlaying(false);
 
@@ -239,6 +318,38 @@ export function CustomVideoPlayer({
   }, []);
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // 2b. Flush Video Telemetry Once on pagehide / unmount
+  // ─────────────────────────────────────────────────────────────────────────────
+  const flushOnce = useCallback(() => {
+    if (telemetryFlushedRef.current || !videoSlug) return;
+    telemetryFlushedRef.current = true;
+    const payload: VideoTelemetryPayload = {
+      videoSlug,
+      playerMode: 'hls',
+      deviceClass: detectDeviceClass(),
+      cacheEnabled: Boolean(cacheConfig?.enabled && videoId),
+      ...loaderTelemetryRef.current,
+      ttffMs: ttffMsRef.current,
+      fallbackReason: fallbackReasonRef.current,
+    };
+    if (onTelemetryFlush) {
+      onTelemetryFlush(payload);
+    } else {
+      flushVideoTelemetry(payload);
+    }
+  }, [videoSlug, cacheConfig?.enabled, videoId, onTelemetryFlush]);
+
+  useEffect(() => {
+    telemetryFlushedRef.current = false;
+    const onPageHide = () => flushOnce();
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      window.removeEventListener('pagehide', onPageHide);
+      flushOnce();
+    };
+  }, [flushOnce]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // 3. User Controls (Play, Seek, Volume, Speed, Fullscreen)
   // ─────────────────────────────────────────────────────────────────────────────
   const togglePlay = useCallback(() => {
@@ -246,6 +357,13 @@ export function CustomVideoPlayer({
     if (!video) return;
 
     if (video.paused) {
+      if (!hasStartedLoadRef.current) {
+        hasStartedLoadRef.current = true;
+        if (playClickedAtRef.current === null) {
+          playClickedAtRef.current = performance.now();
+        }
+        hlsRef.current?.startLoad();
+      }
       video.play().catch((err) => console.warn('Play interrupted:', err));
     } else {
       video.pause();
@@ -420,6 +538,7 @@ export function CustomVideoPlayer({
         ref={videoRef}
         onClick={togglePlay}
         playsInline
+        preload="none"
         className="h-full w-full cursor-pointer object-contain"
       />
 

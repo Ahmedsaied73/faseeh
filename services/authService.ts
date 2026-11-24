@@ -7,6 +7,7 @@ import { apiClient } from '@/lib/api-client';
 import { purgeLegacyAuthStorage } from '@/utils/auth-storage';
 import { clearUserCache } from '@/lib/user-cache';
 import { clearUserEntries, clearShared } from '@/lib/data-cache';
+import { clearVideoSegmentCache } from '@/lib/video-segment-cache';
 import { getDevicePayload } from '@/lib/fingerprint';
 import { User } from '@/types/api';
 
@@ -77,6 +78,7 @@ export const logoutUser = async (): Promise<void> => {
     clearUserCache();
     clearUserEntries();
     clearShared();
+    void clearVideoSegmentCache().catch(() => {});
     if (typeof document !== 'undefined') {
       document.cookie = "isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }

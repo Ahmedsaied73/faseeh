@@ -24,6 +24,7 @@ import {
 import { purgeLegacyAuthStorage } from '@/utils/auth-storage';
 import { clearUserCache } from '@/lib/user-cache';
 import { clearUserEntries, clearShared } from '@/lib/data-cache';
+import { clearVideoSegmentCache } from '@/lib/video-segment-cache';
 import { getCachedDeviceId } from '@/lib/fingerprint';
 
 // ---------------------------------------------------------------------------
@@ -210,6 +211,7 @@ async function request<T>(
     clearUserCache();
     clearUserEntries();
     clearShared();
+    void clearVideoSegmentCache().catch(() => {});
     if (typeof window !== 'undefined') {
       document.cookie = 'isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       // Redirect to login if unauthenticated on protected action

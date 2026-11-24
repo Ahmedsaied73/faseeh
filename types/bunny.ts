@@ -65,6 +65,12 @@ export interface BunnyVideo {
 // API Response Shapes
 // ---------------------------------------------------------------------------
 
+export interface BunnyCacheConfig {
+  enabled: boolean;
+  maxBudgetMb: number;
+  ttlDays: number;
+}
+
 /**
  * Returned by GET /videos/:videoSlug/playback
  * The playbackUrl is a signed Bunny iframe embed URL valid until expiresAt.
@@ -83,6 +89,10 @@ export interface BunnyPlaybackData {
   hlsUrl?: string | null;
   /** Unix timestamp (seconds) when the signed token expires. */
   expiresAt: number;
+  /** Unix timestamp (seconds) when the signed HLS stream URL expires. */
+  hlsExpiresAt?: number | null;
+  /** Client-side IndexedDB segment cache configuration. */
+  cacheConfig?: BunnyCacheConfig;
 }
 
 /**

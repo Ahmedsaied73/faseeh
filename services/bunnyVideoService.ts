@@ -16,6 +16,7 @@
 import { apiClient } from '@/lib/api-client';
 import { cached, userKey } from '@/lib/data-cache';
 import { ForbiddenError, NotFoundError, ApiError } from '@/lib/errors';
+import { clearVideoSegmentCache } from '@/lib/video-segment-cache';
 import type { BunnyVideo, BunnyPlaybackData, BunnyErrorCode } from '@/types/bunny';
 
 export interface BunnyCourseProgressData {
@@ -151,6 +152,7 @@ export async function fetchBunnyPlaybackUrl(
     // Map generic HTTP errors to Bunny-specific typed errors so the UI
     // can branch cleanly on error.code without string-matching messages.
     if (err instanceof ForbiddenError) {
+      void clearVideoSegmentCache().catch(() => {});
       throw new BunnyVideoError(
         'VIDEO_ACCESS_DENIED',
         'يجب أن تكون مشتركًا في هذا الكورس لمشاهدة الفيديوهات',

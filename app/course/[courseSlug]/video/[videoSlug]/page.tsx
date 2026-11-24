@@ -15,7 +15,17 @@ import { getQuizMeta } from '@/services/quizService';
 import { PageTitle } from '@/components/page-title';
 import { videoTitle as composeVideoTitle } from '@/lib/page-titles';
 import { VideoWatermark } from '@/components/video/VideoWatermark';
-import { CustomVideoPlayer } from '@/components/video/CustomVideoPlayer';
+import {
+  CustomVideoPlayer,
+  detectDeviceClass,
+  flushVideoTelemetry,
+} from '@/components/video/CustomVideoPlayer';
+
+function extractBunnyGuid(playbackUrl?: string | null): string | undefined {
+  if (!playbackUrl) return undefined;
+  const match = playbackUrl.match(/\/embed\/[^/]+\/([^/?#]+)/);
+  return match?.[1];
+}
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error) return error.message;
@@ -109,12 +119,16 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
   }, [loadVideo]);
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 2. Silent Token Refresh (proactively refreshes 5 minutes before expiresAt)
+  // 2. Silent Token Refresh (proactively refreshes 5 minutes before earliest expiry)
   // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!playbackData?.expiresAt || !bunnyVideo) return;
 
-    const expiresAtMs = playbackData.expiresAt * 1000;
+    const effectiveExpiresAt = Math.min(
+      playbackData.expiresAt,
+      playbackData.hlsExpiresAt ?? playbackData.expiresAt,
+    );
+    const expiresAtMs = effectiveExpiresAt * 1000;
     const now = Date.now();
     const refreshMarginMs = 5 * 60 * 1000; // 5 minutes before expiry
     const timeUntilRefresh = expiresAtMs - now - refreshMarginMs;
@@ -132,7 +146,51 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [bunnyVideo, playbackData?.expiresAt]);
+  }, [bunnyVideo, playbackData?.expiresAt, playbackData?.hlsExpiresAt]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 2b. Flush iframe fallback telemetry if iframe mode is used
+  // ─────────────────────────────────────────────────────────────────────────────
+  const iframeTelemetryFlushedRef = useRef(false);
+  useEffect(() => {
+    const isIframeMode =
+      !isLoading &&
+      Boolean(playbackData?.playbackUrl) &&
+      (!playbackData?.hlsUrl || forceIframeFallback);
+    if (!isIframeMode || !bunnyVideo?.slug) return;
+
+    iframeTelemetryFlushedRef.current = false;
+    const flushIframe = () => {
+      if (iframeTelemetryFlushedRef.current) return;
+      iframeTelemetryFlushedRef.current = true;
+      flushVideoTelemetry({
+        videoSlug: bunnyVideo.slug,
+        playerMode: 'iframe',
+        deviceClass: detectDeviceClass(),
+        cacheEnabled: Boolean(playbackData?.cacheConfig?.enabled),
+        segmentHits: 0,
+        segmentMisses: 0,
+        bytesFromCache: 0,
+        bytesFromNetwork: 0,
+        idbErrors: 0,
+        ttffMs: null,
+        fallbackReason: forceIframeFallback ? 'hls_fallback' : 'no_hls_url',
+      });
+    };
+
+    window.addEventListener('pagehide', flushIframe);
+    return () => {
+      window.removeEventListener('pagehide', flushIframe);
+      flushIframe();
+    };
+  }, [
+    isLoading,
+    playbackData?.playbackUrl,
+    playbackData?.hlsUrl,
+    playbackData?.cacheConfig?.enabled,
+    forceIframeFallback,
+    bunnyVideo?.slug,
+  ]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 3. Check Video Completion Status
@@ -316,6 +374,9 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
         hlsUrl={playbackData.hlsUrl}
         playbackUrlFallback={playbackData.playbackUrl}
         title={bunnyVideo?.title}
+        videoId={bunnyVideo?.bunnyVideoId ?? extractBunnyGuid(playbackData.playbackUrl)}
+        videoSlug={bunnyVideo?.slug}
+        cacheConfig={playbackData.cacheConfig}
         onFallbackToIframe={() => setForceIframeFallback(true)}
       />
     );
