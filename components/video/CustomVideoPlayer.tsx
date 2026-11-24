@@ -390,6 +390,15 @@ export function CustomVideoPlayer({
     }
   }, []);
 
+  const skipBy = useCallback((deltaSeconds: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+    const maxTime = Number.isFinite(video.duration) ? video.duration : video.currentTime + Math.max(0, deltaSeconds);
+    const next = Math.max(0, Math.min(maxTime, video.currentTime + deltaSeconds));
+    video.currentTime = next;
+    setCurrentTime(next);
+  }, []);
+
   const toggleMute = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -694,7 +703,7 @@ export function CustomVideoPlayer({
                 className="absolute inset-y-0 left-0"
                 style={{
                   width: `${duration ? (currentTime / duration) * 100 : 0}%`,
-                  backgroundColor: 'var(--color-brand-primary)',
+                  backgroundColor: 'var(--color-brand-accent)',
                 }}
               />
             </div>
@@ -715,14 +724,46 @@ export function CustomVideoPlayer({
         {/* Controls row */}
         <div>
           <div className="flex items-center justify-between text-xs sm:text-sm">
-          {/* Left Controls: Play, Volume, Time */}
-          <div className="flex items-center gap-3">
+          {/* Left Controls: Play, Skip ±10s, Volume, Time */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             <button
               onClick={togglePlay}
               aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'}
               className="rounded-lg p-1.5 text-white/90 hover:bg-white/20 hover:text-white"
             >
               {isPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}
+            </button>
+
+            <button
+              onClick={() => {
+                skipBy(-10);
+                resetControlsTimeout();
+              }}
+              aria-label="ترجيع 10 ثوانٍ"
+              title="ترجيع 10 ثوانٍ"
+              className="rounded-lg p-1.5 text-white/90 transition hover:bg-white/20 hover:text-white active:scale-95"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                <path d="M3 3v5h5" />
+                <text x="12" y="15.5" textAnchor="middle" fill="currentColor" stroke="none" fontSize="7.5" fontWeight="700" fontFamily="system-ui, sans-serif">10</text>
+              </svg>
+            </button>
+
+            <button
+              onClick={() => {
+                skipBy(10);
+                resetControlsTimeout();
+              }}
+              aria-label="تقديم 10 ثوانٍ"
+              title="تقديم 10 ثوانٍ"
+              className="rounded-lg p-1.5 text-white/90 transition hover:bg-white/20 hover:text-white active:scale-95"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+                <path d="M21 3v5h-5" />
+                <text x="12" y="15.5" textAnchor="middle" fill="currentColor" stroke="none" fontSize="7.5" fontWeight="700" fontFamily="system-ui, sans-serif">10</text>
+              </svg>
             </button>
 
             {/* Volume control */}
@@ -742,7 +783,7 @@ export function CustomVideoPlayer({
                 value={isMuted ? 0 : volume}
                 onChange={handleVolumeChange}
                 aria-label="مستوى الصوت"
-                className="h-1.5 w-14 cursor-pointer accent-brand-primary sm:w-20"
+                className="h-1.5 w-14 cursor-pointer accent-brand-accent sm:w-20"
               />
             </div>
 
