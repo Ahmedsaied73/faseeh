@@ -14,6 +14,7 @@ import type {
   SubmitQuizData,
   QuizResultData,
   AttemptSummary,
+  EssayPhotoMeta,
 } from '@/types/quiz';
 import {
   getQuizMeta,
@@ -91,13 +92,13 @@ export const startQuizAttempt = createAsyncThunk<StartQuizData, string, { reject
 
 export const submitQuizAttempt = createAsyncThunk<
   SubmitQuizData,
-  { attemptId: number; answers: Record<string, unknown>; autoSubmitted: boolean },
+  { attemptId: number; answers: Record<string, unknown>; autoSubmitted: boolean; essayMeta?: EssayPhotoMeta },
   { rejectValue: QuizThunkError }
 >(
   'quiz/submitQuizAttempt',
-  async ({ attemptId, answers, autoSubmitted }, { rejectWithValue }) => {
+  async ({ attemptId, answers, autoSubmitted, essayMeta }, { rejectWithValue }) => {
     try {
-      return await submitQuiz(attemptId, answers, autoSubmitted);
+      return await submitQuiz(attemptId, answers, autoSubmitted, essayMeta);
     } catch (err: unknown) {
       return rejectWithValue(toQuizThunkError(err, 'تعذر تسليم الاختبار'));
     }

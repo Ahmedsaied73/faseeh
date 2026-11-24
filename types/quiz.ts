@@ -71,6 +71,14 @@ export interface StudentSafeQuiz {
   surveyJson: Record<string, unknown>;
 }
 
+export interface EssayPhotoMetaEntry {
+  source: 'keyboard' | 'photo';
+  wasEdited: boolean;
+  confirmedAt: string;
+}
+
+export type EssayPhotoMeta = Record<string, EssayPhotoMetaEntry>;
+
 export interface StartQuizData {
   attemptId: number;
   attemptNumber: number;
@@ -80,6 +88,8 @@ export interface StartQuizData {
   resumed: boolean;
   responses: Record<string, unknown> | null;
   quiz: StudentSafeQuiz;
+  essayPhotoEnabled?: boolean;
+  remainingPhotoAttempts?: number;
 }
 
 export interface SaveQuizData {

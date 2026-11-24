@@ -9,7 +9,7 @@ import { API_BASE_URL } from "@/lib/api-client";
 import { useQuizTimer } from "@/hooks/useQuizTimer";
 import { useQuizAutosave } from "@/hooks/useQuizAutosave";
 import { ApiError } from "@/lib/errors";
-import type { StartQuizData } from "@/types/quiz";
+import type { StartQuizData, EssayPhotoMeta } from "@/types/quiz";
 import { Flag, Loader2, AlertTriangle } from "lucide-react";
 import DOMPurify from 'dompurify';
 import { RichEditor } from "@/components/rich/RichEditor";
@@ -17,6 +17,8 @@ import { RichView } from "@/components/rich/RichView";
 import { resolveEffectiveFormat, subjectProfile, type AnswerFormat } from "@/lib/subjectProfile";
 import { isEmptyRich } from "@/lib/richContent";
 import { registerRichAnswer } from "@/components/rich/survey/richanswer";
+import { EssayPhotoEntry } from "@/components/essay-photo/EssayPhotoEntry";
+import { hasUnreadableMarkers } from "@/components/essay-photo/latexToRich";
 
 // --- Types from SurveyJS surveyJson shape ---
 interface SurveyElement {
@@ -156,11 +158,17 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [remainingPhotoAttempts, setRemainingPhotoAttempts] = useState<number>(
+    () => startData.remainingPhotoAttempts ?? 10,
+  );
+  const [pendingPhotoDrafts, setPendingPhotoDrafts] = useState<Set<string>>(() => new Set());
+  const [essayMeta, setEssayMeta] = useState<EssayPhotoMeta>({});
   const submitLockRef = useRef(false);
   // Auto-submit-on-leave refs
   const leaveSubmittedRef = useRef(false);
   const mountedAtRef = useRef(Date.now());
   const answersRef = useRef<Record<string, unknown>>(answers);
+  const essayMetaRef = useRef<EssayPhotoMeta>(essayMeta);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -171,6 +179,10 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
   useEffect(() => {
     answersRef.current = answers;
   }, [answers]);
+
+  useEffect(() => {
+    essayMetaRef.current = essayMeta;
+  }, [essayMeta]);
 
   const { isSaving, saveError } = useQuizAutosave({
     attemptId: startData.attemptId,
@@ -196,7 +208,12 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
     if (Date.now() - mountedAtRef.current < 2000) return; // StrictMode remount guard
     leaveSubmittedRef.current = true;
     try {
-      const payload = JSON.stringify({ answers: answersRef.current, autoSubmitted: true });
+      const hasMeta = Object.keys(essayMetaRef.current).length > 0;
+      const payload = JSON.stringify({
+        answers: answersRef.current,
+        autoSubmitted: true,
+        ...(hasMeta ? { essayMeta: essayMetaRef.current } : {}),
+      });
       fetch(`${API_BASE_URL}/quizzes/attempts/${startData.attemptId}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -228,8 +245,30 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
     };
   }, [startData.status, fireKeepaliveSubmit]);
 
+  const validateBeforeManualSubmit = useCallback((): string | null => {
+    if (pendingPhotoDrafts.size > 0) {
+      return "يرجى مراجعة واعتماد النص المستخرج من الصورة قبل تسليم الاختبار.";
+    }
+    for (const q of questions) {
+      if (q.type === "comment" || q.type === "richanswer") {
+        const val = answers[q.name];
+        if (typeof val === "string" && hasUnreadableMarkers(val)) {
+          return "توجد علامات غير واضحة [?] في إجابتك المقالية. يرجى تعديلها قبل التسليم.";
+        }
+      }
+    }
+    return null;
+  }, [pendingPhotoDrafts, questions, answers]);
+
   // Prevent double submission
   const doSubmit = useCallback(async (auto: boolean) => {
+    if (!auto) {
+      const validationErr = validateBeforeManualSubmit();
+      if (validationErr) {
+        setSubmitError(validationErr);
+        return;
+      }
+    }
     if (submitLockRef.current) return;
     submitLockRef.current = true;
     // A manual/timer submit means the exam is being handed in — the later
@@ -239,11 +278,13 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
     setSubmitError(null);
 
     try {
+      const hasMeta = Object.keys(essayMeta).length > 0;
       const result = await dispatch(
         submitQuizAttempt({
           attemptId: startData.attemptId,
           answers: answers as Record<string, unknown>,
           autoSubmitted: auto,
+          ...(hasMeta ? { essayMeta } : {}),
         })
       ).unwrap();
 
@@ -273,7 +314,7 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
     } finally {
       setIsSubmitting(false);
     }
-  }, [answers, startData.attemptId, dispatch, router, courseSlug, videoSlug]);
+  }, [answers, essayMeta, validateBeforeManualSubmit, startData.attemptId, dispatch, router, courseSlug, videoSlug]);
 
   const handleAutoSubmit = useCallback(() => {
     void doSubmit(true);
@@ -382,6 +423,38 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
       const effectiveFormat = resolveEffectiveFormat(rawFormat, isMathQuiz ? "MATH" : undefined);
       const isRich = isRichFlag && (q.type === "richanswer" || effectiveFormat === "RICH" || (isMathQuiz && rawFormat !== "PLAIN"));
 
+      const allowChem = subjectProfile().allowChem;
+      const photoEntryNode =
+        startData.essayPhotoEnabled && startData.status === "IN_PROGRESS" ? (
+          <EssayPhotoEntry
+            attemptId={startData.attemptId}
+            questionId={q.name}
+            isRich={isRich}
+            allowChem={allowChem}
+            remainingAttempts={remainingPhotoAttempts}
+            onRemainingAttemptsChange={setRemainingPhotoAttempts}
+            onDraftStateChange={(hasPending) => {
+              setPendingPhotoDrafts((prev) => {
+                const next = new Set(prev);
+                if (hasPending) next.add(q.name);
+                else next.delete(q.name);
+                return next;
+              });
+            }}
+            onConfirmAnswer={(finalVal, { wasEdited }) => {
+              setAnswer(q.name, finalVal);
+              setEssayMeta((prev) => ({
+                ...prev,
+                [q.name]: {
+                  source: "photo",
+                  wasEdited,
+                  confirmedAt: new Date().toISOString(),
+                },
+              }));
+            }}
+          />
+        ) : null;
+
       if (isRich) {
         return (
           <>
@@ -391,8 +464,9 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
                 value={(answers[q.name] as string) ?? ""}
                 onChange={(val) => setAnswer(q.name, val)}
                 ariaLabel={q.title || "إجابة مقالية"}
-                allowChem={subjectProfile().allowChem}
+                allowChem={allowChem}
               />
+              {photoEntryNode}
             </div>
           </>
         );
@@ -408,6 +482,7 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
             onChange={(e) => setAnswer(q.name, e.target.value)}
             dir="rtl"
           />
+          {photoEntryNode}
         </>
       );
     }
@@ -471,7 +546,12 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
               </span>
             )}
             <button
-              onClick={() => setShowConfirm(true)}
+              onClick={() => {
+                const err = validateBeforeManualSubmit();
+                if (err) { setSubmitError(err); return; }
+                setSubmitError(null);
+                setShowConfirm(true);
+              }}
               disabled={isSubmitting}
               className="rounded-full border border-brand-accent/40 px-4 py-1.5 text-xs font-bold text-brand-accent transition hover:bg-brand-accent/10 disabled:opacity-60"
             >
@@ -559,7 +639,12 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
           ) : (
             <button
               type="button"
-              onClick={() => setShowConfirm(true)}
+              onClick={() => {
+                const err = validateBeforeManualSubmit();
+                if (err) { setSubmitError(err); return; }
+                setSubmitError(null);
+                setShowConfirm(true);
+              }}
               className="rounded-full bg-brand-primary px-6 py-2.5 text-sm font-bold text-white transition hover:bg-brand-primary/90"
             >
               إنهاء وتسليم

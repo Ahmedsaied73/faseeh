@@ -13,6 +13,7 @@ import type {
   QuizResultData,
   StudentAttemptsData,
   SaveQuizData,
+  EssayPhotoMeta,
 } from '@/types/quiz';
 
 /**
@@ -39,10 +40,12 @@ export async function submitQuiz(
   attemptId: number,
   answers: Record<string, unknown>,
   autoSubmitted: boolean,
+  essayMeta?: EssayPhotoMeta,
 ): Promise<SubmitQuizData> {
   return apiClient.post<SubmitQuizData>(`/quizzes/attempts/${attemptId}/submit`, {
     answers,
     autoSubmitted,
+    ...(essayMeta && Object.keys(essayMeta).length > 0 ? { essayMeta } : {}),
   });
 }
 
