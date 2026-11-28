@@ -42,7 +42,7 @@ export default function Home() {
     <main className="w-full min-h-screen bg-brand-bg" dir="rtl">
 
       {/* ── HERO ── */}
-      <section className={"mx-auto max-w-6xl px-4 pt-10 pb-16 sm:px-6 sm:pt-16 " + (ACTIVE_SUBJECT === 'arabic' ? 'arabesque-bg' : '')}>
+      <section className={"mx-auto max-w-6xl px-4 pt-10 pb-16 sm:px-6 sm:pt-16 " + (ACTIVE_SUBJECT === 'arabic' ? 'arabesque-bg' : ACTIVE_SUBJECT === 'math' ? 'math-bg' : '')}>
         <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <Reveal className="text-center lg:text-start">
             <span className="rounded-full bg-brand-secondary/10 px-3 py-1 text-xs font-semibold text-brand-secondary">
@@ -51,6 +51,11 @@ export default function Home() {
             <h1 className="mx-auto mt-5 max-w-2xl text-3xl font-extrabold leading-tight text-brand-text sm:text-5xl lg:mx-0">
               {subject.teacherName}
             </h1>
+            {ACTIVE_SUBJECT === 'math' && (
+              <svg viewBox="0 0 200 20" className="mx-auto mt-2 h-4 w-44 text-brand-primary lg:mx-0" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+                <path d="M4 10 C 20 -2, 34 -2, 50 10 S 80 22, 100 10 S 130 -2, 150 10 S 180 22, 196 10" pathLength={1} className="subj-draw" />
+              </svg>
+            )}
             {ACTIVE_SUBJECT === 'arabic' && (
               <svg viewBox="0 0 200 20" className="mx-auto mt-2 h-4 w-44 text-brand-primary lg:mx-0" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
                 <path d="M4 12 C 40 2, 70 22, 100 12 S 160 2, 196 12" pathLength={1} className="subj-draw" />
@@ -76,7 +81,7 @@ export default function Home() {
           </Reveal>
 
           <Reveal delayMs={90} className="flex justify-center items-center lg:justify-end">
-            <TeacherStage src="/teacher.webp" alt={subject.teacherName} />
+            <TeacherStage />
           </Reveal>
         </div>
 
@@ -133,7 +138,7 @@ export default function Home() {
             مساعدك الذكي متاح على مدار الساعة
           </h2>
           <p className="mt-3 text-brand-muted">
-            علقت في مفهوم؟ اسأل مساعد فصيح واحصل على شرح فوري بأسلوب مبسّط، أي وقت تحتاجه.
+            علقت في مسألة؟ اسأل المساعد الذكي واحصل على شرح فوري بأسلوب مبسّط، أي وقت تحتاجه.
           </p>
         </Reveal>
 

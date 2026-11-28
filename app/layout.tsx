@@ -1,5 +1,6 @@
 import './globals.css';
 import 'katex/dist/katex.min.css';
+import '@/components/gamification/gamify.css';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import { Navbar } from '@/components/navbar';
@@ -7,6 +8,8 @@ import { Footer } from '@/components/footer';
 import { siteConfig } from '@/lib/site-config';
 import { ReduxProvider } from '@/store/provider';
 import { AuthInitializer } from '@/store/auth-initializer';
+import { GamificationProvider } from '@/components/gamification/provider';
+import { GamifyEffects } from '@/components/gamification/effects';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as HotToaster } from 'react-hot-toast';
 
@@ -81,13 +84,16 @@ export default function RootLayout({
       <body className={`${brandFont.variable} min-h-screen bg-brand-bg flex flex-col font-sans`}>
         <ReduxProvider>
           <AuthInitializer>
-            <Navbar />
-            <main className="grow pt-16">
-              {children}
-            </main>
-            <Footer />
-            <Toaster />
-            <HotToaster position="top-center" />
+            <GamificationProvider>
+              <Navbar />
+              <main className="grow pt-16">
+                {children}
+              </main>
+              <Footer />
+              <Toaster />
+              <HotToaster position="top-center" />
+              <GamifyEffects />
+            </GamificationProvider>
           </AuthInitializer>
         </ReduxProvider>
       </body>

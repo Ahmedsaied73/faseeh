@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { selectIsAuthenticated, selectUser, selectIsAdmin, logout } from "@/store/slices/authSlice";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { HudPill } from "@/components/gamification/components";
 import { subject } from "@/lib/subject-theme";
 import { BrandLogo } from "@/components/brand";
 
@@ -81,10 +82,10 @@ export function Navbar() {
         {/* Grain/blur layer — clipped to the pill and pointer-transparent, so the
             avatar dropdown below can overflow without being cut off. */}
         <div
-          className="glass-nav glass-pill pointer-events-none absolute inset-0 border border-brand-border/50 bg-brand-surface/70 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-brand-surface/60"
+          className="glass-nav glass-pill pointer-events-none absolute inset-0 border border-brand-border/80 bg-brand-surface/92 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-brand-surface/92"
           aria-hidden="true"
         />
-        <div className="relative z-10 flex h-16 items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6" dir="rtl">
+        <div className="relative z-10 flex h-16 items-center justify-between gap-1.5 px-2.5 sm:gap-4 sm:px-6" dir="rtl">
 
         {/* ── Logo ── */}
         <Link href="/" className="flex items-center shrink-0 transition-opacity hover:opacity-90" aria-label="فصيح — الرئيسية">
@@ -113,7 +114,7 @@ export function Navbar() {
         )}
 
         {/* ── Left Controls ── */}
-        <div className="relative z-10 flex items-center gap-2 sm:gap-2.5" dir="rtl">
+        <div className="relative z-10 flex items-center gap-1.5 sm:gap-2.5" dir="rtl">
           {isAdmin && (
             <Link
               href="/admin"
@@ -125,6 +126,7 @@ export function Navbar() {
               <span className="hidden sm:inline">لوحة التحكم</span>
             </Link>
           )}
+          <HudPill />
           <ThemeToggle />
           {isAuthenticated ? (
             <>

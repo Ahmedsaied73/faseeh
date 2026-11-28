@@ -36,6 +36,9 @@ import type { BunnyVideo } from '@/types/bunny';
 import type { GradeEnum } from '@/types/api';
 import { PageTitle } from '@/components/page-title';
 import { adminTitle } from '@/lib/page-titles';
+import { useAppSelector } from '@/store/hooks';
+import { selectUser } from '@/store/slices/authSlice';
+import { TeacherChallengeEditor } from '@/components/gamification/components';
 
 const GRADE_LABEL: Record<string, string> = {
   FIRST_SECONDARY: 'الأول الثانوي',
@@ -68,6 +71,7 @@ const EMPTY_FORM: CourseFormState = { title: '', description: '', price: '', gra
 
 
 export default function AdminCoursesPage() {
+  const user = useAppSelector(selectUser);
   const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -471,6 +475,17 @@ export default function AdminCoursesPage() {
                         <Plus className="h-3.5 w-3.5" />
                         رفع فيديو جديد
                       </button>
+
+                      {user?.features?.gamification === true && (
+                        <div className="mt-4">
+                          <TeacherChallengeEditor
+                            courseSlug={c.slug}
+                            quizzes={vids
+                              .filter((v) => v.quizSlug)
+                              .map((v) => ({ slug: v.quizSlug!, title: v.title }))}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

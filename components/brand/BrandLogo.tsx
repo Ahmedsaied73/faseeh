@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { siteConfig } from '@/lib/site-config';
 
 export type BrandLogoVariant = 'horizontal' | 'stacked' | 'symbol' | 'wordmark';
 export type BrandLogoTheme = 'auto' | 'light' | 'dark';
@@ -72,10 +73,10 @@ const ASSETS = {
 } as const;
 
 const DEFAULT_ALTS: Record<BrandLogoVariant, string> = {
-  horizontal: 'فصيح — اللغة العربية للثانوية العامة',
-  stacked: 'فصيح — اللغة العربية للثانوية العامة',
-  wordmark: 'فصيح',
-  symbol: 'فصيح',
+  horizontal: `${siteConfig.brandMark} — ${siteConfig.subjectName} للثانوية العامة`,
+  stacked: `${siteConfig.brandMark} — ${siteConfig.subjectName} للثانوية العامة`,
+  wordmark: siteConfig.brandMark,
+  symbol: siteConfig.brandMark,
 };
 
 export function BrandLogo({

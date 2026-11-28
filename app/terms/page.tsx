@@ -13,14 +13,14 @@ export default function TermsPage() {
     <div className="mx-auto max-w-3xl px-6 py-12 text-brand-text leading-relaxed text-base" dir="rtl">
       <h1 className="text-2xl font-bold mb-2">شروط وأحكام الاستخدام</h1>
       <p className="text-sm text-brand-muted mb-8">
-        منصة {siteConfig.brandMark} — الأستاذ {siteConfig.teacherName} (آخر تحديث: أكتوبر 2026)
+        منصة {siteConfig.brandMark} — {siteConfig.teacherName} (آخر تحديث: أكتوبر 2026)
       </p>
 
       <div className="space-y-6">
         <section>
           <h2 className="text-lg font-semibold mb-2">تمهيد</h2>
           <p>
-            مرحباً بكم في منصة {siteConfig.brandMark} التعليمية التابعة للأستاذ {siteConfig.teacherName}. تسجيلك للحساب أو اشتراكك في الكورسات والاختبارات يعد موافقة كاملة على شروط الاستخدام الموضحة أدناه لضمان تجربة تعليمية منظمة وعادلة.
+            مرحباً بكم في منصة {siteConfig.brandMark} التعليمية الخاصة بـ {siteConfig.teacherName}. تسجيلك للحساب أو اشتراكك في الكورسات والاختبارات يعد موافقة كاملة على شروط الاستخدام الموضحة أدناه لضمان تجربة تعليمية منظمة وعادلة.
           </p>
         </section>
 
@@ -57,7 +57,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold mb-2">4. حماية المحتوى والملكية الفكرية</h2>
           <p className="mb-2">
-            كافة مقاطع الفيديو، الشروحات، وبنوك الأسئلة والامتحانات هي ملكية تعليمية خاصة بالأستاذ {siteConfig.teacherName} ومحمية بحقوق الملكية الفكرية.
+            كافة مقاطع الفيديو، الشروحات، وبنوك الأسئلة والامتحانات هي ملكية تعليمية خاصة بـ {siteConfig.teacherName} ومحمية بحقوق الملكية الفكرية.
           </p>
           <p className="mb-2">
             يعرض مشغل الفيديو علامة مائية تتضمن بيانات حساب الطالب ورقم هاتفه بشكل دوري أثناء التشغيل لحماية المحتوى ومتابعة جودة البث.

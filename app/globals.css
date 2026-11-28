@@ -246,6 +246,75 @@
     --radius: 0.5rem;
   }
 
+  /* Palette v1 HSL equivalents, scoped to data-theme (light above, dark below). */
+  [data-theme='light'] {
+    --background: 0 0% 95%;
+    --foreground: 243 76% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 243 76% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 243 76% 5%;
+    --primary: 222 46% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 216 19% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 216 20% 95%;
+    --muted-foreground: 215 19% 40%;
+    --accent: 20 80% 90%;
+    --accent-foreground: 20 80% 10%;
+    --border: 213 18% 90%;
+    --input: 213 18% 90%;
+    --ring: 222 46% 50%;
+    --shadow-level-1: 0px 0px 0px 1px #e1e5ea;
+    --shadow-primary-glow: 0px 4px 20px rgba(69, 104, 186, 0.3);
+  }
+
+  [data-theme='dark'] {
+    --background: 0 0% 5%;
+    --foreground: 243 76% 95%;
+    --card: 0 0% 10%;
+    --card-foreground: 243 76% 95%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 243 76% 95%;
+    --primary: 222 46% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 216 19% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 216 20% 5%;
+    --muted-foreground: 215 19% 60%;
+    --accent: 20 82% 20%;
+    --accent-foreground: 20 80% 90%;
+    --border: 213 18% 10%;
+    --input: 216 20% 20%;
+    --ring: 222 46% 50%;
+    --shadow-level-1: 0px 0px 0px 1px #29313d;
+    --shadow-primary-glow: 0px 4px 20px rgba(69, 104, 186, 0.4);
+  }
+
+  /* Footer sits a step darker than the section above it. The wavy divider
+     matches the footer in dark mode instead of turning white. */
+  :root {
+    --footer-bg: #040316;
+    --footer-wave: #f2f2f2;
+  }
+
+  [data-theme='dark'] {
+    /* A darker shade of the neutral black used by the section above (#0d0d0d). */
+    --footer-bg: #050505;
+    --footer-wave: #050505;
+  }
+
+  /* Skeleton loaders keep their original pre-palette look in both themes;
+     the pulse animation and shapes are untouched. */
+  .animate-pulse {
+    --color-brand-chip: #F1F5F9;
+    --muted: 213 24% 96%;
+  }
+
+  [data-theme='dark'] .animate-pulse {
+    --color-brand-chip: #182027;
+  }
+
   /* -------------------------------------------------------
    Base layer — light theme, Cairo font, RTL
 ------------------------------------------------------ */
@@ -307,6 +376,20 @@
       transparent 0
     );
     background-size: 32px 32px;
+  }
+
+  /* Shared palette v1 gradients (used in both themes). */
+  .primary-gradient,
+  .primary-text-gradient {
+    background-image: var(--linearPrimaryAccent);
+  }
+
+  .dot-grid-bg {
+    background-image: radial-gradient(
+      circle at 2px 2px,
+      rgba(69, 104, 186, 0.13) 1px,
+      transparent 0
+    );
   }
 
 /* ---- Scroll reveal (verbatim from the reference) ---- */

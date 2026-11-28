@@ -23,6 +23,7 @@ import { selectUser } from '@/store/slices/authSlice';
 import { logoutUser } from '@/services/authService';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { BrandLogo } from '@/components/brand';
+import { siteConfig } from '@/lib/site-config';
 
 const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: React.ComponentType<{ className?: string }>; feature?: 'notifications' | 'aiGrader' | 'accessCodes' }[] }[] = [
   {
@@ -106,7 +107,7 @@ export function AdminSidebar({ mobileOpen = false, onCloseMobile }: { mobileOpen
           </Link>
           <div className="flex-1">
             <p className="text-sm font-extrabold text-brand-text">لوحة التحكم</p>
-            <p className="text-xs text-brand-muted">منصة فصيح للغة العربية</p>
+            <p className="text-xs text-brand-muted">منصة {siteConfig.subjectName}</p>
           </div>
           <button
             type="button"
@@ -175,7 +176,7 @@ export function AdminSidebar({ mobileOpen = false, onCloseMobile }: { mobileOpen
           </Link>
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-brand-text">لوحة التحكم</p>
-            <p className="truncate text-[11px] text-brand-muted">منصة فصيح للغة العربية</p>
+            <p className="truncate text-[11px] text-brand-muted">منصة {siteConfig.subjectName}</p>
           </div>
         </div>
         <ThemeToggle />

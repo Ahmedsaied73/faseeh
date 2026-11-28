@@ -14,6 +14,9 @@ import type { QuizGate403, QuizMeta } from '@/types/quiz';
 import { getQuizMeta } from '@/services/quizService';
 import { PageTitle } from '@/components/page-title';
 import { videoTitle as composeVideoTitle } from '@/lib/page-titles';
+import { LessonEnd } from '@/components/gamification/components';
+import { useGamification } from '@/components/gamification/provider';
+import type { GamificationAward } from '@/lib/gamification.config';
 import { VideoWatermark } from '@/components/video/VideoWatermark';
 import {
   CustomVideoPlayer,
@@ -39,10 +42,12 @@ function getErrorMessage(error: unknown, fallback: string): string {
 export default function VideoPage({ params }: { params: { courseSlug: string; videoSlug: string } }) {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+  const { pushAward } = useGamification();
 
   // Bunny playback and video metadata
   const [playbackData, setPlaybackData] = useState<BunnyPlaybackData | null>(null);
   const [bunnyVideo, setBunnyVideo] = useState<BunnyVideo | null>(null);
+  const [courseVideos, setCourseVideos] = useState<BunnyVideo[]>([]);
   const playerContainerRef = useRef<HTMLDivElement>(null);
 
   // Loading & error states
@@ -58,6 +63,7 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
   const [completingVideo, setCompletingVideo] = useState(false);
   const [apiCompletionStatus, setApiCompletionStatus] = useState(false);
   const [completionDate, setCompletionDate] = useState<string | null>(null);
+  const [lessonAward, setLessonAward] = useState<GamificationAward | null>(null);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 1. Fetch Video Playback URL & Metadata (Bunny Stream)
@@ -71,13 +77,16 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
       setQuizGate(null);
       setQuizMeta(null);
       setBunnyVideo(null);
+      setCourseVideos([]);
       setPlaybackData(null);
       setForceIframeFallback(false);
+      setLessonAward(null);
 
-      const courseVideos = await fetchBunnyCourseVideos(params.courseSlug);
+      const fetchedVideos = await fetchBunnyCourseVideos(params.courseSlug);
+      setCourseVideos(fetchedVideos);
 
       // Find matching video by public slug
-      const foundVideo = courseVideos.find(
+      const foundVideo = fetchedVideos.find(
         v => v.slug === params.videoSlug
       );
 
@@ -250,12 +259,18 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
       if (!videoSlug) {
         throw new Error('تعذر تحديد المحاضرة لتحديث التقدم');
       }
-      await apiClient.post<{ videoSlug: string; completed: boolean; watchedAt: string | null }>(
-        '/progress/complete',
-        { videoSlug }
-      );
+      const res = await apiClient.post<{
+        videoSlug: string;
+        completed: boolean;
+        watchedAt: string | null;
+        gamificationAward?: GamificationAward | null;
+      }>('/progress/complete', { videoSlug });
       setApiCompletionStatus(true);
       setCompletionDate(new Date().toISOString());
+      if (res?.gamificationAward) {
+        pushAward(res.gamificationAward);
+        setLessonAward(res.gamificationAward);
+      }
       dispatch(addNotification({
         type: 'success',
         message: 'تم إكمال المحاضرة بنجاح!'
@@ -274,7 +289,7 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
     } finally {
       setCompletingVideo(false);
     }
-  }, [apiCompletionStatus, bunnyVideo?.slug, dispatch]);
+  }, [apiCompletionStatus, bunnyVideo?.slug, dispatch, pushAward]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 5. Render Video Player or State Placeholders
@@ -414,6 +429,24 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
   const isQuizPassed = !!(quizMeta?.exists && quizMeta.passed);
   const isQuizFailed = !!(quizMeta?.exists && quizMeta.attempted && !quizMeta.passed && (quizMeta.bestScore !== null || !quizMeta.inProgressAttempt));
 
+  const sortedCourseVideos = [...courseVideos].sort(
+    (a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER),
+  );
+  const currentVideoIndex = bunnyVideo
+    ? sortedCourseVideos.findIndex((v) => v.slug === bunnyVideo.slug)
+    : -1;
+  const nextReadyVideo =
+    currentVideoIndex >= 0
+      ? sortedCourseVideos.slice(currentVideoIndex + 1).find((v) => v.status === 'READY') ?? null
+      : null;
+  const nextLesson = nextReadyVideo
+    ? { slug: nextReadyVideo.slug, title: nextReadyVideo.title }
+    : null;
+  const totalCount =
+    lessonAward?.totalLessonsCount ??
+    (sortedCourseVideos.length > 0 ? sortedCourseVideos.length : undefined);
+  const completedCount = lessonAward?.completedLessonsCount;
+
   return (
     <div className="w-full">
       {/* Unique tab title: generic while loading, the video's own name once fetched. */}
@@ -474,6 +507,15 @@ export default function VideoPage({ params }: { params: { courseSlug: string; vi
                 هذه المحاضرة غير مرتبطة بسجل التقدم والاختبار بعد.
               </p>
             )}
+
+            <LessonEnd
+              courseSlug={params.courseSlug}
+              lessonSlug={bunnyVideo?.slug ?? params.videoSlug}
+              award={lessonAward}
+              nextLesson={nextLesson}
+              completedCount={completedCount}
+              totalCount={totalCount}
+            />
           </Reveal>
 
           <Reveal delayMs={100}>

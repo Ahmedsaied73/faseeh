@@ -13,7 +13,7 @@ export default function PrivacyPage() {
     <div className="mx-auto max-w-3xl px-6 py-12 text-brand-text leading-relaxed text-base" dir="rtl">
       <h1 className="text-2xl font-bold mb-2">سياسة الخصوصية وحماية البيانات</h1>
       <p className="text-sm text-brand-muted mb-8">
-        منصة {siteConfig.brandMark} — الأستاذ {siteConfig.teacherName} (آخر تحديث: أكتوبر 2026)
+        منصة {siteConfig.brandMark} — {siteConfig.teacherName} (آخر تحديث: أكتوبر 2026)
       </p>
 
       <div className="space-y-6">

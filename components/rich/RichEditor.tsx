@@ -14,12 +14,14 @@
  * in the focused line's toolbar toggles it.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RICH_LIMITS, parseRich, serializeRich, type RichBlock } from "@/lib/richContent";
+import katex from "katex";
+import "katex/contrib/mhchem";
+import { RICH_LIMITS, parseRich, serializeRich } from "@/lib/richContent";
 import { MathBlockEditor, type MathHandle } from "./MathBlockEditor";
 import { useFullKeyboard, useKeyboardInset } from "./useKeyboardInset";
 import { makeT, type Locale, type RichT } from "./strings";
 
-export type Line = { id: string; t: "text" | "math"; v: string; incomplete?: boolean };
+export type Line = { id: string; t: "text" | "math" | "chem"; v: string; incomplete?: boolean };
 
 export interface RichEditorProps {
   value: string;
@@ -38,7 +40,7 @@ let uid = 0;
 const nextId = () => `l${++uid}_${Math.random().toString(36).slice(2, 7)}`;
 
 function toLines(value: string): Line[] {
-  const blocks = parseRich(value).blocks.filter((b): b is Extract<RichBlock, { t: "text" | "math" }> => b.t !== "chem");
+  const blocks = parseRich(value).blocks;
   const lines: Line[] = blocks.map((b, i) => ({ id: `line-${i}`, t: b.t, v: b.v }));
   return lines.length ? lines : [{ id: "line-0", t: "text", v: "" }];
 }
@@ -124,6 +126,136 @@ function TextLine({
   );
 }
 
+function hasBalancedBraces(s: string): boolean {
+  let depth = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === "\\" && i + 1 < s.length) {
+      i++;
+      continue;
+    }
+    if (s[i] === "{") depth++;
+    else if (s[i] === "}") {
+      depth--;
+      if (depth < 0) return false;
+    }
+  }
+  return depth === 0;
+}
+
+function ChemLine({
+  line,
+  onChange,
+  placeholder,
+  label,
+  focusToken,
+  onBackspaceEmpty,
+  readOnly,
+  t,
+}: {
+  line: Line;
+  onChange: (v: string) => void;
+  placeholder: string;
+  label: string;
+  focusToken: number;
+  onBackspaceEmpty: () => void;
+  readOnly?: boolean;
+  t: RichT;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (focusToken > 0) ref.current?.focus();
+  }, [focusToken]);
+
+  const balanced = hasBalancedBraces(line.v);
+  const previewHtml = useMemo(() => {
+    if (!line.v.trim() || !balanced) return null;
+    try {
+      return katex.renderToString(`\\ce{${line.v}}`, {
+        displayMode: false,
+        throwOnError: false,
+        trust: false,
+        strict: "ignore",
+      });
+    } catch {
+      return null;
+    }
+  }, [line.v, balanced]);
+
+  const insertToken = (tok: string) => {
+    const el = ref.current;
+    if (!el || readOnly) {
+      onChange(line.v + tok);
+      return;
+    }
+    const start = el.selectionStart ?? line.v.length;
+    const end = el.selectionEnd ?? line.v.length;
+    const next = line.v.slice(0, start) + tok + line.v.slice(end);
+    if (next.length <= RICH_LIMITS.maxChemChars) {
+      onChange(next);
+      requestAnimationFrame(() => {
+        el.focus();
+        el.setSelectionRange(start + tok.length, start + tok.length);
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <input
+        ref={ref}
+        type="text"
+        dir="ltr"
+        value={line.v}
+        readOnly={readOnly}
+        maxLength={RICH_LIMITS.maxChemChars}
+        placeholder={placeholder}
+        aria-label={label}
+        autoCapitalize="off"
+        spellCheck={false}
+        className="w-full rounded-lg border border-brand-border bg-brand-bg px-2.5 py-1.5 font-mono text-sm text-brand-text outline-none focus:border-brand-primary"
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Backspace" && line.v === "" && !e.nativeEvent.isComposing) {
+            e.preventDefault();
+            onBackspaceEmpty();
+          }
+        }}
+      />
+      {!readOnly && (
+        <div className="flex flex-wrap gap-1" dir="ltr">
+          {[
+            { tok: " -> ", title: t("rich.chemInsertArrow"), label: "→" },
+            { tok: " <=> ", title: t("rich.chemInsertEquilibrium"), label: "⇌" },
+            { tok: " ^ ", title: t("rich.chemInsertGas"), label: "↑" },
+            { tok: " v ", title: t("rich.chemInsertPrecipitate"), label: "↓" },
+            { tok: " ->[\\Delta] ", title: t("rich.chemInsertHeat"), label: "Δ" },
+          ].map((b) => (
+            <button
+              key={b.tok}
+              type="button"
+              title={b.title}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => insertToken(b.tok)}
+              className="rounded border border-brand-border bg-brand-surface px-2 py-0.5 text-xs font-semibold text-brand-text hover:border-brand-primary"
+            >
+              {b.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {!balanced && <p className="rs-note rs-note--warn">{t("rich.chemInvalidFormula")}</p>}
+      {previewHtml && (
+        <div
+          dir="ltr"
+          aria-label={t("rich.chemPreview")}
+          className="rounded-md bg-brand-chip/50 px-2.5 py-1 text-sm"
+          dangerouslySetInnerHTML={{ __html: previewHtml }}
+        />
+      )}
+    </div>
+  );
+}
+
 export function RichEditor({
   value,
   onChange,
@@ -133,6 +265,7 @@ export function RichEditor({
   t: tProp,
   maxBlocks = RICH_LIMITS.maxBlocks,
   className,
+  allowChem = false,
 }: RichEditorProps) {
   const t = useMemo(() => tProp ?? makeT(locale), [tProp, locale]);
   const nf = useMemo(() => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en"), [locale]);
@@ -168,7 +301,7 @@ export function RichEditor({
 
   const requestFocus = (id: string) => setFocusReq((f) => ({ id, n: (f?.n ?? 0) + 1 }));
 
-  const addLine = (kind: "text" | "math", afterIndex = lines.length - 1) => {
+  const addLine = (kind: "text" | "math" | "chem", afterIndex = lines.length - 1) => {
     if (lines.length >= maxBlocks) return;
     const line: Line = { id: nextId(), t: kind, v: "" };
     const next = [...lines.slice(0, afterIndex + 1), line, ...lines.slice(afterIndex + 1)];
@@ -257,7 +390,12 @@ export function RichEditor({
         {lines.map((line, i) => {
           const isActive = line.id === activeId;
           const has = line.v.trim() !== "";
-          const typeLabel = line.t === "math" ? t("rich.equationLabel") : t("rich.textLabel");
+          const typeLabel =
+            line.t === "math"
+              ? t("rich.equationLabel")
+              : line.t === "chem"
+                ? t("rich.chemLabel")
+                : t("rich.textLabel");
           const label = `${t("rich.step")} ${nf.format(i + 1)} · ${typeLabel}`;
           const token = focusReq && focusReq.id === line.id ? focusReq.n : 0;
           return (
@@ -284,6 +422,17 @@ export function RichEditor({
                     focusToken={token}
                     onChange={(v) => setLine(line.id, { v })}
                     onBackspaceEmpty={() => removeLine(line.id)}
+                  />
+                ) : line.t === "chem" ? (
+                  <ChemLine
+                    line={line}
+                    readOnly={readOnly}
+                    label={label}
+                    placeholder={t("rich.chemHint")}
+                    focusToken={token}
+                    onChange={(v) => setLine(line.id, { v })}
+                    onBackspaceEmpty={() => removeLine(line.id)}
+                    t={t}
                   />
                 ) : (
                   <MathBlockEditor
@@ -378,6 +527,18 @@ export function RichEditor({
             </span>
             {t("rich.addEquation")}
           </button>
+          {allowChem && (
+            <button
+              type="button"
+              className="rs-btn rs-btn--chem"
+              disabled={lines.length >= maxBlocks}
+              onClick={() => addLine("chem")}
+            >
+              <Svg d={Icon.plus} />
+              <span aria-hidden="true">⚗</span>
+              {t("rich.addChem")}
+            </button>
+          )}
           {lines.length >= maxBlocks && (
             <p className="rs-note rs-note--warn rs-span">{t("rich.limitReached")}</p>
           )}

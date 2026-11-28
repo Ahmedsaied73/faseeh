@@ -8,6 +8,8 @@ import type { AchievementsData } from '@/types/quiz';
 import { PageTitle } from '@/components/page-title';
 import { withTeacher } from '@/lib/site-config';
 import { PAGE_TITLES } from '@/lib/page-titles';
+import { AchievementsView } from '@/components/gamification/components';
+import { useGamification } from '@/components/gamification/provider';
 
 function gradeColor(pct: number) {
   if (pct >= 85) return "text-brand-primary";
@@ -16,11 +18,17 @@ function gradeColor(pct: number) {
 }
 
 export default function UserAchievementsPage() {
+  const { enabled } = useGamification();
   const [data, setData] = useState<AchievementsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (enabled) {
+      setLoading(false);
+      return;
+    }
+
     const fetchAchievements = async () => {
       try {
         const result = await getAchievements();
@@ -34,7 +42,16 @@ export default function UserAchievementsPage() {
     };
 
     fetchAchievements();
-  }, []);
+  }, [enabled]);
+
+  if (enabled) {
+    return (
+      <>
+        <PageTitle title={withTeacher(PAGE_TITLES.achievements)} />
+        <AchievementsView />
+      </>
+    );
+  }
 
   if (loading) {
     return (

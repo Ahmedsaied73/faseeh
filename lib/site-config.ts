@@ -11,6 +11,14 @@
  * are public by design — never put secrets here. Changing any variable
  * takes effect on rebuild/restart, with zero code changes.
  */
+function resolveDisplaySubjectName(raw?: string): string {
+  const val = (raw ?? '').trim();
+  if (!val || /^(math|mathematics|رياض(ة|يات)|الرياضيات)$/i.test(val)) {
+    return 'الرياضيات';
+  }
+  return val;
+}
+
 export const siteConfig = {
   /** Canonical public origin. Server-only (sitemap, metadataBase, JSON-LD). */
   url: (() => {
@@ -31,18 +39,18 @@ export const siteConfig = {
 
   /** Primary brand. Students search for this name — it anchors every title. */
   teacherName:
-    process.env.NEXT_PUBLIC_TEACHER_NAME ?? 'الأستاذ محمد ممدوح',
+    process.env.NEXT_PUBLIC_TEACHER_NAME ?? 'الباشمهندس محمد زين',
 
   /** Primary teacher photo. */
   teacherPhoto: '/teacher.webp',
 
   /** Short subject label. Also feeds manifest short_name (12-char limit). */
-  subjectName: process.env.NEXT_PUBLIC_SUBJECT_NAME ?? 'اللغة العربية',
+  subjectName: resolveDisplaySubjectName(process.env.NEXT_PUBLIC_SUBJECT_NAME),
 
   /** Default title + meta description + social-card subtitle. */
   tagline:
     process.env.NEXT_PUBLIC_SITE_TAGLINE ??
-    'فصيح — منصة تعليم اللغة العربية للثانوية العامة مع الأستاذ محمد ممدوح',
+    'الباشمهندس محمد زين — منصة تعليم الرياضيات للثانوية العامة',
 
   /** Fixed platform mark (navbar/footer). Per owner decision: NOT white-labeled. */
   brandMark: 'فصيح',

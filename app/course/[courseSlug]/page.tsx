@@ -13,6 +13,7 @@ import { fetchBunnyCourseVideos } from '@/services/bunnyVideoService';
 import type { BunnyVideo } from '@/types/bunny';
 import { PageTitle } from '@/components/page-title';
 import { courseTitle } from '@/lib/page-titles';
+import { ChallengeNode } from '@/components/gamification/components';
 
 const INITIAL_VISIBLE_LESSONS = 6;
 const ARABIC_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
@@ -256,6 +257,12 @@ export default function Page({ params }: { params: { courseSlug: string } }) {
                 <ChevronDown size={20} aria-hidden="true" />
                 عرض باقي الحصص والمحاضرات ({remainingVideos} محاضرة متبقية)
               </button>
+            )}
+
+            {isEnrolled && (
+              <div className="mt-5">
+                <ChallengeNode courseSlug={params.courseSlug} />
+              </div>
             )}
           </Reveal>
 

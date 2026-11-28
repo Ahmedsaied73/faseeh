@@ -60,11 +60,11 @@ export function Footer() {
   }
 
   return (
-    <footer className="relative mt-10 bg-brand-ink text-white/70" dir="rtl">
+    <footer className="relative mt-10 bg-[var(--footer-bg)] text-white/70" dir="rtl">
       <svg
         viewBox="0 0 1200 40"
         preserveAspectRatio="none"
-        className="block h-6 w-full text-brand-bg"
+        className="block h-6 w-full text-[var(--footer-wave)]"
         aria-hidden="true"
       >
         <path d="M0 20 Q150 40 300 20 T600 20 T900 20 T1200 20 V0 H0 Z" fill="currentColor" />

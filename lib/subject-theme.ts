@@ -1,3 +1,5 @@
+import { siteConfig } from "@/lib/site-config";
+
 /**
  * SUBJECT PACKS — the platform's subject identity in one place.
  *
@@ -6,14 +8,15 @@
  * Add a new subject by adding a pack to `packs` and an art set in
  * components/subject/.
  */
-export type Subject = "chemistry" | "arabic";
+export type Subject = "chemistry" | "arabic" | "math";
 
-export const ACTIVE_SUBJECT: Subject = "arabic";
+export const ACTIVE_SUBJECT: Subject = "math";
 
 type ChatLine = { role: "student" | "assistant"; text: string };
 
 export type SubjectPack = {
   id: Subject;
+  platformTag: string;
   teacherName: string;
   brandTagline: string;
   heroBadge: string;
@@ -31,6 +34,7 @@ export type SubjectPack = {
 
 const chemistry: SubjectPack = {
   id: "chemistry",
+  platformTag: "أكاديميا الكيمياء",
   teacherName: "الأستاذ عبدالهادي موسى",
   brandTagline: "عبدالهادي موسى للكيمياء",
   heroBadge: "منصة تعليمية متخصصة في الكيمياء",
@@ -74,6 +78,7 @@ const chemistry: SubjectPack = {
 
 const arabic: SubjectPack = {
   id: "arabic",
+  platformTag: "أكاديميا العربية",
   teacherName: "الأستاذ محمد ممدوح",
   brandTagline: "فصيح — اللغة العربية للثانوية العامة",
   heroBadge: "فصيح · منصة تعليمية متخصصة في اللغة العربية",
@@ -116,6 +121,52 @@ const arabic: SubjectPack = {
   },
 };
 
-export const packs: Record<Subject, SubjectPack> = { chemistry, arabic };
+const math: SubjectPack = {
+  id: "math",
+  platformTag: "أكاديميا الرياضيات",
+  teacherName: process.env.NEXT_PUBLIC_TEACHER_NAME ?? siteConfig.teacherName,
+  brandTagline: "الباشمهندس محمد زين — الرياضيات للثانوية العامة",
+  heroBadge: "منصة تعليمية متخصصة في الرياضيات",
+  heroSub: "جبر، تفاضل، هندسة… الرياضيات بتبقى أبسط بكتير لما تفهم الفكرة قبل القانون.",
+  footerBlurb: "خطوة بخطوة نحو التفوق في الرياضيات — شرح مرئي، اختبارات فورية، ومتابعة حقيقية لتقدمك.",
+  newsletterTitle: "مسألة الأسبوع",
+  assistantPlaceholder: "اكتب سؤالك في الرياضيات…",
+  assistantSeed: [
+    { role: "student", text: "إزاي أحل معادلة من الدرجة التانية؟" },
+    {
+      role: "assistant",
+      text: "حلّل المقدار لو أمكن: x² − 5x + 6 = (x − 2)(x − 3) فيكون الحل x = 2 أو x = 3. ولو التحليل صعب استخدم القانون العام: x = (−b ± √(b² − 4ac)) ÷ 2a.",
+    },
+  ],
+  assistantSuggestions: [
+    "اشرح لي معنى المشتقة ببساطة",
+    "ما الفرق بين الدالة والمعادلة؟",
+    "إزاي أحسب مساحة المثلث؟",
+  ],
+  assistantKnowledge: [
+    { keys: ["المشتقة", "تفاضل"], answer: "المشتقة بتقيس معدل تغيّر الدالة عند نقطة، يعني ميل المماس للمنحنى عندها. مثال: مشتقة x² هي 2x، فعند x = 3 يكون الميل = 6." },
+    { keys: ["تربيعية", "الدرجة التانية", "الدرجة الثانية"], answer: "حلّل المقدار لو أمكن، مثلًا x² − 5x + 6 = (x − 2)(x − 3) فيكون x = 2 أو x = 3. وإن صعب التحليل استخدم القانون العام x = (−b ± √(b² − 4ac)) ÷ 2a." },
+    { keys: ["دالة", "الدالة"], answer: "الدالة قاعدة بتربط كل قيمة x بقيمة واحدة بالظبط f(x). أما المعادلة فبتقولك إن طرفين متساويين وبنبحث عن قيمة x اللي تحقق ده." },
+    { keys: ["مساحة", "مثلث"], answer: "مساحة المثلث = ½ × القاعدة × الارتفاع. مثال: قاعدة 6 وارتفاع 4 → المساحة = 12 وحدة مربعة." },
+    { keys: ["فيثاغورث"], answer: "في المثلث القائم الزاوية: مربع الوتر = مجموع مربعي الضلعين الآخرين. مثال: 3 و4 و5 لأن 9 + 16 = 25." },
+  ],
+  notFound: {
+    kicker: "x ∉ D(f)",
+    title: "هذه الصفحة خارج مجال الدالة",
+    body: "الصفحة التي تبحث عنها غير معرّفة عند هذه القيمة — ربما نُقلت أو حُذفت.",
+  },
+  login: {
+    title: "أهلًا بعودتك",
+    subtitle: "سجّل الدخول لتكمل دروسك من حيث وقفت.",
+    sideLine: "كل مسألة تحلّها تقرّبك من التي تليها — أكمل من حيث توقفت.",
+  },
+  register: {
+    title: "ابدأ رحلتك مع الرياضيات",
+    subtitle: "أنشئ حسابًا لتتابع دروسك ونتائجك من أي جهاز.",
+    sideLine: "الرياضيات تُبنى خطوةً فوق خطوة، مثل متتالية لا تنتهي — ابدأ بالحد الأول.",
+  },
+};
+
+export const packs: Record<Subject, SubjectPack> = { chemistry, arabic, math };
 
 export const subject: SubjectPack = packs[ACTIVE_SUBJECT];

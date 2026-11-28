@@ -116,14 +116,14 @@ export function AiAssistantDemo() {
 
       <div
         ref={consoleRef}
-        className="mt-4 h-64 overflow-y-auto rounded-2xl bg-brand-ink p-5 text-start font-mono text-xs leading-relaxed sm:text-sm"
+        className="mt-4 h-64 overflow-y-auto rounded-2xl bg-[#0a0c0f] p-5 text-start font-mono text-xs leading-relaxed sm:text-sm"
         dir="rtl"
       >
         {log.map((entry, i) => {
           if (entry.role === 'auth_required') {
             return (
               <p key={i} className="mb-3 text-amber-300">
-                <span className="text-brand-muted">!</span> {entry.text}{' '}
+                <span className="text-[#a4b0c1]">!</span> {entry.text}{' '}
                 <Link href="/login" className="font-bold underline hover:text-white ms-1">
                   (تسجيل الدخول)
                 </Link>
@@ -133,17 +133,17 @@ export function AiAssistantDemo() {
           if (entry.role === 'error') {
             return (
               <p key={i} className="mb-3 text-red-400">
-                <span className="text-brand-muted">!</span> {entry.text}
+                <span className="text-[#a4b0c1]">!</span> {entry.text}
               </p>
             );
           }
           return (
-            <p key={i} className={'mb-3 ' + (entry.role === 'student' ? 'text-white' : 'text-brand-secondary')}>
-              <span className="text-brand-muted">{entry.role === 'student' ? '>' : '◆'}</span> {entry.text}
+            <p key={i} className={'mb-3 ' + (entry.role === 'student' ? 'text-white' : 'text-[#c2cad6]')}>
+              <span className="text-[#a4b0c1]">{entry.role === 'student' ? '>' : '◆'}</span> {entry.text}
             </p>
           );
         })}
-        {thinking && <p className="text-brand-muted">◆ يكتب الآن…</p>}
+        {thinking && <p className="text-[#a4b0c1]">◆ يكتب الآن…</p>}
       </div>
     </div>
   );

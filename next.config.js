@@ -1,4 +1,28 @@
 /** @type {import('next').NextConfig} */
+if (
+  process.env.NODE_ENV === 'production' &&
+  process.env.npm_lifecycle_event === 'build' &&
+  process.env.ALLOW_LOCAL_PROD_BUILD !== 'true'
+) {
+  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || '').trim();
+  let parsedUrl = null;
+  try {
+    parsedUrl = apiUrl ? new URL(apiUrl) : null;
+  } catch {
+    parsedUrl = null;
+  }
+  if (
+    !parsedUrl ||
+    parsedUrl.protocol !== 'https:' ||
+    parsedUrl.hostname === 'localhost' ||
+    parsedUrl.hostname === '127.0.0.1'
+  ) {
+    throw new Error(
+      `[FATAL] NEXT_PUBLIC_API_URL must be an absolute https:// URL (non-localhost) in production builds. Got: "${apiUrl || '<unset>'}"`
+    );
+  }
+}
+
 const nextConfig = {
   output: 'standalone',
   // ESLint: enforce linting on every build — no silent bypasses.
@@ -118,10 +142,6 @@ const nextConfig = {
       {
         source: '/manifest.webmanifest',
         destination: '/site.webmanifest',
-      },
-      {
-        source: '/api-backend/:path*',
-        destination: 'https://sage-centaur-3a2305.netlify.app/:path*',
       },
     ];
   },

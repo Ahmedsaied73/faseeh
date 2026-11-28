@@ -38,6 +38,12 @@ interface ChatMessage {
      */
     question: string;
   };
+  previewPending?: {
+    confirmationToken: string;
+    toolName: string | null;
+    expiresAt: string | null;
+    decided: 'CONFIRMED' | 'CANCELLED' | null;
+  };
 }
 
 /**
@@ -260,6 +266,22 @@ export function AgentChat({ compact = false, onStatusChange }: AgentChatProps = 
           loadConversations();
         }
         const requested = 'approvalRequested' in result.detail ? result.detail.approvalRequested : null;
+        const previewPending =
+          'previewPending' in result.detail && result.detail.previewPending
+            ? result.detail.previewPending
+            : null;
+        if (previewPending) {
+          push({
+            role: 'agent',
+            text: 'معاينة جاهزة — هل تريد تأكيد تنفيذ الإجراء؟',
+            previewPending: {
+              confirmationToken: previewPending.confirmationToken,
+              toolName: previewPending.toolName,
+              expiresAt: previewPending.expiresAt,
+              decided: null,
+            },
+          });
+        }
         if (requested) {
           push({
             role: 'agent',
@@ -503,6 +525,31 @@ export function AgentChat({ compact = false, onStatusChange }: AgentChatProps = 
                 </Link>
               )}
               {m.approval && <ApprovalPrompt approval={m.approval} now={now} onDecide={decide} />}
+              {m.previewPending && (
+                <PreviewConfirmPrompt
+                  preview={m.previewPending}
+                  onConfirm={() => {
+                    const tok = m.previewPending!.confirmationToken;
+                    setLog((prev) =>
+                      prev.map((row) =>
+                        row.id === m.id && row.previewPending
+                          ? { ...row, previewPending: { ...row.previewPending, decided: 'CONFIRMED' } }
+                          : row,
+                      ),
+                    );
+                    send(`تأكيد التنفيذ (confirmationToken: ${tok})`);
+                  }}
+                  onCancel={() => {
+                    setLog((prev) =>
+                      prev.map((row) =>
+                        row.id === m.id && row.previewPending
+                          ? { ...row, previewPending: { ...row.previewPending, decided: 'CANCELLED' } }
+                          : row,
+                      ),
+                    );
+                  }}
+                />
+              )}
             </div>
           </div>
         ))}
@@ -600,6 +647,42 @@ export function AgentChat({ compact = false, onStatusChange }: AgentChatProps = 
  * buttons reuse the design's own chip and send-button shapes so they read as
  * part of the same component.
  */
+function PreviewConfirmPrompt({
+  preview,
+  onConfirm,
+  onCancel,
+}: {
+  preview: NonNullable<ChatMessage['previewPending']>;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  if (preview.decided) {
+    return (
+      <p className="mt-2 text-xs font-bold text-brand-muted-strong">
+        {preview.decided === 'CONFIRMED' ? 'تم إرسال التأكيد للتنفيذ.' : 'تم إلغاء الإجراء.'}
+      </p>
+    );
+  }
+  return (
+    <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-brand-border/60 pt-2">
+      <button
+        type="button"
+        onClick={onConfirm}
+        className="rounded-full bg-brand-primary px-3.5 py-1 text-xs font-bold text-white transition hover:bg-brand-primary/90"
+      >
+        تأكيد التنفيذ
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="rounded-full border border-brand-border px-3.5 py-1 text-xs font-bold text-brand-muted-strong transition hover:border-brand-accent/60 hover:text-brand-accent"
+      >
+        إلغاء
+      </button>
+    </div>
+  );
+}
+
 function ApprovalPrompt({
   approval,
   now,

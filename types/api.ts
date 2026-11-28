@@ -55,6 +55,7 @@ export interface User {
     aiGrader?: boolean;
     accessCodes?: boolean;
     payments?: boolean;
+    gamification?: boolean;
   };
 }
 

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { CourseListItem, fetchAllCourses } from '@/services/courseService';
 import { Reveal } from '@/components/reveal';
+import { DashboardStrip } from '@/components/gamification/components';
 
 const FILTERS = ['الكل', 'مجاني', 'مدفوع'] as const;
 type Filter = (typeof FILTERS)[number];
@@ -103,6 +104,8 @@ export function CourseCatalog() {
         <h1 className="text-2xl font-extrabold text-brand-text sm:text-3xl">الدورات المتاحة</h1>
         <p className="mt-2 text-brand-muted">اختر دورتك وابدأ التعلم بخطوات واضحة.</p>
       </Reveal>
+
+      <DashboardStrip />
 
       <Reveal delayMs={60} className="mx-auto mt-8 max-w-lg">
         <div className="flex items-center gap-2 rounded-full border border-brand-border bg-brand-surface px-4 py-2.5 shadow-sm transition focus-within:border-brand-primary/50">

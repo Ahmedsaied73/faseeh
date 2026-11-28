@@ -21,37 +21,178 @@
 
 @theme {
 
-  --color-brand-text: #0B1119;
-  --color-brand-bg: #F4F6F8;
-  --color-brand-primary: #4685CE;
-  --color-brand-secondary: #90BAE9;
-  --color-brand-accent: #EA5D79;
+  /* Light palette — literal values from the scales below (plain @theme drops
+     var() values). Dark mode keeps its own literals in the block beneath. */
+  --color-brand-text: #040316;
+  --color-brand-bg: #f2f2f2;
+  --color-brand-primary: #4568ba;
+  --color-brand-secondary: #677b98;
+  --color-brand-accent: #e85d17;
 
-  --color-brand-ink: #0B1119;
+  --color-brand-ink: #040316;
   --color-brand-surface: #FFFFFF;
-  --color-brand-border: #E2E8F0;
-  --color-brand-border-strong: #CBD5E1;
-  --color-brand-muted: #94A3B8;
-  --color-brand-muted-strong: #475569;
-  --color-brand-chip: #F1F5F9;
-  --color-brand-hover: #F8FAFC;
+  --color-brand-border: #e1e5ea;
+  --color-brand-border-strong: #a4b0c1;
+  --color-brand-muted: #8696ac;
+  --color-brand-muted-strong: #536379;
+  --color-brand-chip: #f0f2f5;
+  --color-brand-hover: #ecf0f8;
+}
+
+/* Light-only palette scales (v1). The app switches theme with data-theme on
+   <html>, so the light values are scoped here rather than with
+   prefers-color-scheme; the dark scales live in the block below. */
+:root:not([data-theme="dark"]) {
+  --text-50: #eae9fc;
+  --text-100: #d4d2f9;
+  --text-200: #a9a5f3;
+  --text-300: #7e78ed;
+  --text-400: #534be7;
+  --text-500: #281fe0;
+  --text-600: #2018b4;
+  --text-700: #181287;
+  --text-800: #100c5a;
+  --text-900: #08062d;
+  --text-950: #040316;
+
+  --background-50: #f2f2f2;
+  --background-100: #e6e6e6;
+  --background-200: #cccccc;
+  --background-300: #b3b3b3;
+  --background-400: #999999;
+  --background-500: #808080;
+  --background-600: #666666;
+  --background-700: #4d4d4d;
+  --background-800: #333333;
+  --background-900: #1a1a1a;
+  --background-950: #0d0d0d;
+
+  --primary-50: #ecf0f8;
+  --primary-100: #dae1f1;
+  --primary-200: #b5c3e3;
+  --primary-300: #8fa4d6;
+  --primary-400: #6a86c8;
+  --primary-500: #4568ba;
+  --primary-600: #375395;
+  --primary-700: #293e70;
+  --primary-800: #1c2a4a;
+  --primary-900: #0e1525;
+  --primary-950: #070a13;
+
+  --secondary-50: #f0f2f5;
+  --secondary-100: #e1e5ea;
+  --secondary-200: #c2cad6;
+  --secondary-300: #a4b0c1;
+  --secondary-400: #8696ac;
+  --secondary-500: #677b98;
+  --secondary-600: #536379;
+  --secondary-700: #3e4a5b;
+  --secondary-800: #29313d;
+  --secondary-900: #15191e;
+  --secondary-950: #0a0c0f;
+
+  --accent-50: #fdefe8;
+  --accent-100: #fadfd1;
+  --accent-200: #f6bea2;
+  --accent-300: #f19e74;
+  --accent-400: #ed7d45;
+  --accent-500: #e85d17;
+  --accent-600: #ba4a12;
+  --accent-700: #8b380e;
+  --accent-800: #5d2509;
+  --accent-900: #2e1305;
+  --accent-950: #170902;
+
+}
+
+/* Gradients are shared by both themes. */
+:root {
+  --linearPrimarySecondary: linear-gradient(#d6def0, #95a3b7);
+  --linearPrimaryAccent: linear-gradient(#d6def0, #e35b16);
+  --linearSecondaryAccent: linear-gradient(#95a3b7, #e35b16);
+  --radialPrimarySecondary: radial-gradient(#d6def0, #95a3b7);
+  --radialPrimaryAccent: radial-gradient(#d6def0, #e35b16);
+  --radialSecondaryAccent: radial-gradient(#95a3b7, #e35b16);
+}
+
+/* Dark-only palette scales (v1) — same step indices as the light scale. */
+[data-theme="dark"] {
+  --text-50: #040316;
+  --text-100: #08062d;
+  --text-200: #100c5a;
+  --text-300: #181287;
+  --text-400: #2018b4;
+  --text-500: #281fe0;
+  --text-600: #534be7;
+  --text-700: #7e78ed;
+  --text-800: #a9a5f3;
+  --text-900: #d4d2f9;
+  --text-950: #eae9fc;
+
+  --background-50: #0d0d0d;
+  --background-100: #1a1a1a;
+  --background-200: #333333;
+  --background-300: #4d4d4d;
+  --background-400: #666666;
+  --background-500: #808080;
+  --background-600: #999999;
+  --background-700: #b3b3b3;
+  --background-800: #cccccc;
+  --background-900: #e6e6e6;
+  --background-950: #f2f2f2;
+
+  --primary-50: #070a13;
+  --primary-100: #0e1525;
+  --primary-200: #1c2a4a;
+  --primary-300: #293e70;
+  --primary-400: #375395;
+  --primary-500: #4568ba;
+  --primary-600: #6a86c8;
+  --primary-700: #8fa4d6;
+  --primary-800: #b5c3e3;
+  --primary-900: #dae1f1;
+  --primary-950: #ecf0f8;
+
+  --secondary-50: #0a0c0f;
+  --secondary-100: #15191e;
+  --secondary-200: #29313d;
+  --secondary-300: #3e4a5b;
+  --secondary-400: #536379;
+  --secondary-500: #677b98;
+  --secondary-600: #8696ac;
+  --secondary-700: #a4b0c1;
+  --secondary-800: #c2cad6;
+  --secondary-900: #e1e5ea;
+  --secondary-950: #f0f2f5;
+
+  --accent-50: #170902;
+  --accent-100: #2e1305;
+  --accent-200: #5d2509;
+  --accent-300: #8b380e;
+  --accent-400: #ba4a12;
+  --accent-500: #e85d17;
+  --accent-600: #ed7d45;
+  --accent-700: #f19e74;
+  --accent-800: #f6bea2;
+  --accent-900: #fadfd1;
+  --accent-950: #fdefe8;
 }
 
 [data-theme="dark"] {
-  --color-brand-text: #EDF1F5;
-  --color-brand-bg: #0A0D12;
-  --color-brand-primary: #5C93D6;
-  --color-brand-secondary: #7FA7D6;
-  --color-brand-accent: #EF7089;
+  --color-brand-text: #eae9fc;
+  --color-brand-bg: #0d0d0d;
+  --color-brand-primary: #4568ba;
+  --color-brand-secondary: #677b98;
+  --color-brand-accent: #e85d17;
 
-  --color-brand-ink: #05080A;
-  --color-brand-surface: #12181C;
-  --color-brand-border: #232C31;
-  --color-brand-border-strong: #38444B;
-  --color-brand-muted: #7C8B92;
-  --color-brand-muted-strong: #C3D0D4;
-  --color-brand-chip: #182027;
-  --color-brand-hover: #171E22;
+  --color-brand-ink: #eae9fc;
+  --color-brand-surface: #1a1a1a;
+  --color-brand-border: #15191e;
+  --color-brand-border-strong: #3e4a5b;
+  --color-brand-muted: #536379;
+  --color-brand-muted-strong: #8696ac;
+  --color-brand-chip: #0a0c0f;
+  --color-brand-hover: #070a13;
 
   --color-emerald-50: #0E251B;
   --color-emerald-100: #123322;
@@ -146,6 +287,50 @@
   .subj-spin-slow, .subj-spin-rev, .subj-float, .subj-bob,
   .subj-tag-in, .subj-rise, .subj-wander, .subj-draw { animation: none; }
   .subj-draw { stroke-dashoffset: 0; }
+}
+
+/* ---- Math pack ---- */
+/* graph-paper tile with a small "+" at every crossing, tinted by the theme primary */
+.math-bg { position: relative; }
+.math-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: var(--color-brand-primary);
+  opacity: 0.08;
+  -webkit-mask-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cg fill='none' stroke='black'%3E%3Cpath d='M0 .5H44M.5 0V44' stroke-width='.8'/%3E%3Cpath d='M22 18v8M18 22h8' stroke-width='1.3'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cg fill='none' stroke='black'%3E%3Cpath d='M0 .5H44M.5 0V44' stroke-width='.8'/%3E%3Cpath d='M22 18v8M18 22h8' stroke-width='1.3'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-size: 44px 44px;
+  mask-size: 44px 44px;
+}
+.math-bg > * { position: relative; z-index: 1; }
+
+/* faint grid on the dark auth panels */
+.mth-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 20%, transparent 75%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 20%, transparent 75%);
+}
+@keyframes mth-seq {
+  0% { opacity: 0; }
+  8%, 88% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes mth-arc {
+  0% { stroke-dashoffset: 1; opacity: 1; }
+  14%, 88% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+.mth-seq { opacity: 0; animation: mth-seq 12s ease-in-out infinite both; }
+.mth-arc { stroke-dasharray: 1; animation: mth-arc 12s ease-in-out infinite both; }
+@media (prefers-reduced-motion: reduce) {
+  .mth-seq { animation: none; opacity: 1; }
+  .mth-arc { animation: none; stroke-dashoffset: 0; opacity: 1; }
 }
 
 /* Brand logo theme auto-switching */

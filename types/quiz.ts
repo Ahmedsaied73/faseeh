@@ -7,6 +7,8 @@
  * Do NOT add client-side computed fields here — only shapes returned by the API.
  */
 
+import type { GamificationAward } from '@/lib/gamification.config';
+
 // ---------------------------------------------------------------------------
 // Shared
 // ---------------------------------------------------------------------------
@@ -145,6 +147,7 @@ export interface SubmitQuizData {
   scorePercent: number;
   hasEssays: boolean;
   perQuestion: McqPerQuestion[];
+  gamificationAward?: GamificationAward | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -183,6 +186,7 @@ export type ResultQuestion = McqResultQuestion | EssayResultQuestion;
 export interface QuizResultData {
   attemptId: number;
   attemptNumber: number;
+  quizSlug?: string;
   status: AttemptStatus;
   startedAt: string;
   submittedAt: string | null;
@@ -193,6 +197,7 @@ export interface QuizResultData {
   passed: boolean;
   passingScore: number;
   questions: ResultQuestion[];
+  gamificationAward?: GamificationAward | null;
 }
 
 // ---------------------------------------------------------------------------

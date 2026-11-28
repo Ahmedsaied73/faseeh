@@ -89,6 +89,12 @@ export interface AgentDeterministicDetail {
   declinedReason: null;
 }
 
+export interface AgentPreviewPending {
+  confirmationToken: string;
+  toolName: string | null;
+  expiresAt: string | null;
+}
+
 export interface AgentLlmDetail {
   provider: string;
   toolCalls: string[];
@@ -97,6 +103,8 @@ export interface AgentLlmDetail {
   approval: number | null;
   /** A NEW pending approval the model needs a human to decide. */
   approvalRequested: AgentApprovalRequested | null;
+  /** A KIND_CONFIRM preview waiting for explicit admin confirmation. */
+  previewPending?: AgentPreviewPending | null;
   latencyMs: number;
 }
 

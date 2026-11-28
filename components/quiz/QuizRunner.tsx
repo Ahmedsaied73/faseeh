@@ -19,6 +19,7 @@ import { isEmptyRich } from "@/lib/richContent";
 import { registerRichAnswer } from "@/components/rich/survey/richanswer";
 import { EssayPhotoEntry } from "@/components/essay-photo/EssayPhotoEntry";
 import { hasUnreadableMarkers } from "@/components/essay-photo/latexToRich";
+import { useGamification } from "@/components/gamification/provider";
 
 // --- Types from SurveyJS surveyJson shape ---
 interface SurveyElement {
@@ -149,6 +150,7 @@ interface QuizRunnerProps {
 export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRunnerProps) {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+  const { pushAward } = useGamification();
 
   const questions = extractQuestions(startData.quiz.surveyJson);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -288,6 +290,10 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
         })
       ).unwrap();
 
+      if (result.gamificationAward) {
+        pushAward(result.gamificationAward);
+      }
+
       // Route based on grading status
       if (result.status === "GRADED" || result.status === "GRADING") {
         await dispatch(fetchQuizMeta(videoSlug)).unwrap();
@@ -314,7 +320,7 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
     } finally {
       setIsSubmitting(false);
     }
-  }, [answers, essayMeta, validateBeforeManualSubmit, startData.attemptId, dispatch, router, courseSlug, videoSlug]);
+  }, [answers, essayMeta, validateBeforeManualSubmit, startData.attemptId, dispatch, pushAward, router, courseSlug, videoSlug]);
 
   const handleAutoSubmit = useCallback(() => {
     void doSubmit(true);
@@ -419,11 +425,17 @@ export default function QuizRunner({ startData, courseSlug, videoSlug }: QuizRun
     if (q.type === "comment" || q.type === "richanswer") {
       const isRichFlag = process.env.NEXT_PUBLIC_RICH_INPUT_ENABLED !== "false";
       const rawFormat = (q.answerFormat as AnswerFormat) || (q.format as AnswerFormat) || null;
-      const isMathQuiz = Boolean(startData?.quiz?.title && /(?:\u0631\u064A\u0627\u0636|math|\u0641\u064A\u0632\u064A\u0627\u0621|physics|\u0643\u064A\u0645\u064A\u0627\u0621|chem)/i.test(startData.quiz.title));
-      const effectiveFormat = resolveEffectiveFormat(rawFormat, isMathQuiz ? "MATH" : undefined);
-      const isRich = isRichFlag && (q.type === "richanswer" || effectiveFormat === "RICH" || (isMathQuiz && rawFormat !== "PLAIN"));
-
-      const allowChem = subjectProfile().allowChem;
+      const quizTitle = startData?.quiz?.title || "";
+      const detectedSubject = /(?:\u0643\u064A\u0645\u064A\u0627\u0621|chem)/i.test(quizTitle)
+        ? "CHEMISTRY"
+        : /(?:\u0641\u064A\u0632\u064A\u0627\u0621|physics)/i.test(quizTitle)
+          ? "PHYSICS"
+          : /(?:\u0631\u064A\u0627\u0636|\u062A\u0641\u0627\u0636\u0644|\u062A\u0643\u0627\u0645\u0644|\u062C\u0628\u0631|\u0647\u0646\u062F\u0633\u0629|\u0627\u0633\u062A\u0627\u062A\u064A\u0643\u0627|\u062F\u064A\u0646\u0627\u0645\u064A\u0643\u0627|\u0625\u062D\u0635\u0627\u0621|math)/i.test(quizTitle)
+            ? "MATH"
+            : undefined;
+      const effectiveFormat = resolveEffectiveFormat(rawFormat, detectedSubject);
+      const isRich = isRichFlag && (q.type === "richanswer" || effectiveFormat === "RICH");
+      const allowChem = subjectProfile(detectedSubject).allowChem || subjectProfile().allowChem;
       const photoEntryNode =
         startData.essayPhotoEnabled && startData.status === "IN_PROGRESS" ? (
           <EssayPhotoEntry

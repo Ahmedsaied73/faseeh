@@ -7,6 +7,7 @@ import { AppDispatch } from "@/store/store";
 import { fetchQuizResult, fetchQuizAttempts, selectQuizResult, selectQuizAttempts, selectSubmitResult } from "@/store/slices/quizSlice";
 import QuizResultSummary from "@/components/quiz/QuizResultSummary";
 import QuizReviewList from "@/components/quiz/QuizReviewList";
+import { QuizAward } from "@/components/gamification/components";
 import { Loader2 } from "lucide-react";
 import { PageTitle } from "@/components/page-title";
 import { withTeacher } from "@/lib/site-config";
@@ -129,6 +130,17 @@ export default function QuizResultPage({ params }: PageProps) {
           videoSlug={params.videoSlug}
         />
       )}
+
+      <div className="mx-auto max-w-2xl px-4 sm:px-6">
+        <QuizAward
+          quizSlug={result.quizSlug || params.videoSlug}
+          award={
+            submitResult?.attemptId === result.attemptId
+              ? (submitResult.gamificationAward ?? result.gamificationAward)
+              : result.gamificationAward
+          }
+        />
+      </div>
 
       {/* 2. Review List (Hidden if pending) */}
       {!isPending && (

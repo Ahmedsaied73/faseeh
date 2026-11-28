@@ -30,12 +30,17 @@ import { getCachedDeviceId } from '@/lib/fingerprint';
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3005'
-  // A trailing slash in the env value (e.g. https://api.example.com/)
-  // would produce double-slashed paths (`//courses`) which Express
-  // treats as a different route → 404. Strip all trailing slashes once.
-).replace(/\/+$/, '');
+const RAW_API_URL = (process.env.NEXT_PUBLIC_API_URL ?? '').trim();
+if (
+  process.env.NODE_ENV === 'production' &&
+  process.env.ALLOW_LOCAL_PROD_BUILD !== 'true' &&
+  (!RAW_API_URL || !RAW_API_URL.startsWith('https://') || /localhost|127\.0\.0\.1/i.test(RAW_API_URL))
+) {
+  throw new Error(
+    `[api-client] NEXT_PUBLIC_API_URL must be an absolute https:// URL in production (got "${RAW_API_URL || '<unset>'}").`
+  );
+}
+const API_BASE_URL = (RAW_API_URL || 'http://localhost:3005').replace(/\/+$/, '');
 
 export { API_BASE_URL };
 

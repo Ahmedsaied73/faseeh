@@ -9,7 +9,7 @@ import type { NextRequest } from 'next/server';
 // - Inside /course, lessons and subscription flows (/video/, /subscribe/) require auth,
 //   while the course outline/overview (/course/:slug or /course/:id) remains publicly viewable.
 function isPathProtected(pathname: string): boolean {
-  if (pathname.startsWith('/me') || pathname.startsWith('/admin')) {
+  if (pathname.startsWith('/me') || pathname.startsWith('/admin') || pathname.startsWith('/achievements')) {
     return true;
   }
   if (pathname.startsWith('/course/') && (pathname.includes('/video/') || pathname.includes('/subscribe'))) {
@@ -47,5 +47,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/me/:path*', '/course/:path*', '/admin', '/admin/:path*'],
+  matcher: ['/me/:path*', '/course/:path*', '/admin', '/admin/:path*', '/achievements', '/achievements/:path*'],
 };

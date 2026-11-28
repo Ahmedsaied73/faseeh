@@ -7,7 +7,7 @@ export function NotFoundView() {
     <div className="flex min-h-dvh items-center justify-center bg-brand-bg px-4 py-10">
       <div className="mx-auto max-w-xl text-center">
         <NotFoundArt />
-        <p className="mt-8 font-mono text-xs uppercase tracking-widest text-brand-muted">{subject.notFound.kicker}</p>
+        <p className={"mt-8 font-mono text-xs tracking-widest text-brand-muted " + (subject.id === "math" ? "" : "uppercase")}>{subject.notFound.kicker}</p>
         <h1 className="mt-2 text-2xl font-extrabold text-brand-text sm:text-3xl">{subject.notFound.title}</h1>
         <p className="mt-2 text-sm text-brand-muted">{subject.notFound.body}</p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
